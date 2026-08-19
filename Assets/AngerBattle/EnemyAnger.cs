@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 namespace AngerBattle
@@ -7,6 +8,7 @@ namespace AngerBattle
     /// 「怒り」本体。
     /// 台詞（文字の弾幕）が流れきった後にSetPresent(true)で登場し、
     /// プレイヤーの攻撃弾（DenialBullet）を受けるとOnDefeatedイベントを発火する。
+    /// 登場時は、シーンに配置されている定位置へ向かって右側からゆっくりスライドしてくる。
     ///
     /// 「それは異常です」というセリフの表示は、このスクリプトではなく
     /// AngerBattleController側（AttackLineText）が、登場と同時に自動で行う。
@@ -24,11 +26,22 @@ namespace AngerBattle
         [Tooltip("このターンで倒すために必要なヒット数（仕様上は基本1）")]
         public int hitsToDefeatThisTurn = 1;
 
+        [Header("登場演出")]
+        [Tooltip("シーンに配置した定位置から、この距離だけ右側の画面外からスライドして登場する")]
+        public float appearFromOffsetX = 6f;
+        [Tooltip("登場時に定位置までスライドしてくるのにかかる時間（秒）")]
+        public float appearDuration = 0.6f;
+
         private int currentHits = 0;
         private bool isPresent = false;
+        private Vector3 restingPosition;
+        private Coroutine appearCoroutine;
 
         void Awake()
         {
+            // シーンに配置されている位置を「定位置」として覚えておく
+            restingPosition = transform.position;
+
             // 最初は非表示（台詞が流れきるまで登場しない）
             SetPresent(false);
         }
@@ -37,13 +50,44 @@ namespace AngerBattle
         public void SetPresent(bool present)
         {
             isPresent = present;
-            gameObject.SetActive(present);
             currentHits = 0;
+
+            if (appearCoroutine != null)
+            {
+                StopCoroutine(appearCoroutine);
+                appearCoroutine = null;
+            }
+
+            if (present)
+            {
+                gameObject.SetActive(true);
+                appearCoroutine = StartCoroutine(AppearFromRight());
+            }
+            else
+            {
+                gameObject.SetActive(false);
+            }
         }
 
         public bool IsPresent()
         {
             return isPresent;
+        }
+
+        /// <summary>定位置より右側の画面外から、定位置までゆっくりスライドしてくる。</summary>
+        private IEnumerator AppearFromRight()
+        {
+            Vector3 start = restingPosition + new Vector3(appearFromOffsetX, 0f, 0f);
+            transform.position = start;
+
+            float t = 0f;
+            while (t < appearDuration)
+            {
+                t += Time.deltaTime;
+                transform.position = Vector3.Lerp(start, restingPosition, t / appearDuration);
+                yield return null;
+            }
+            transform.position = restingPosition;
         }
 
         /// <summary>攻撃弾がヒットした時にDenialBulletから呼ばれる。</summary>
