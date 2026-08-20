@@ -37,25 +37,41 @@ namespace AngerBattle
 
         [Header("演出全体の尺とテンポ")]
         [Tooltip("演出全体の長さ（秒）")]
+        [Range(1f, 20f)]
         public float totalDuration = 6f;
         [Tooltip("カチカチと刻む間隔（秒）。最初から一定の速いテンポで刻み続ける")]
+        [Range(0.02f, 1f)]
         public float tickInterval = 0.12f;
 
         [Header("時計の文字のズームイン（演出全体を通じて連続的に拡大）")]
+        [Tooltip("開始時の拡大率")]
+        [Range(0.5f, 5f)]
         public float startScale = 1f;
+        [Tooltip("終了時の拡大率")]
+        [Range(0.5f, 10f)]
         public float endScale = 3f;
         [Tooltip("時計の文字のガタツキ（ジッター）の振れ幅（ピクセル）")]
+        [Range(0f, 50f)]
         public float jitterAmount = 6f;
 
         [Header("ノイズ（進行につれて段階的に増える）")]
+        [Tooltip("開始時に同時表示するノイズ矩形の数")]
+        [Range(0, 10)]
         public int noiseBlockCountStart = 1;
+        [Tooltip("終了時に同時表示するノイズ矩形の数")]
+        [Range(0, 10)]
         public int noiseBlockCountEnd = 10;
 
         [Header("背景ブラックアウト（演出全体を通じて0→1へ）")]
+        [Tooltip("開始時の背景の不透明度（0=透明）")]
+        [Range(0f, 1f)]
         public float backgroundStartAlpha = 0f;
+        [Tooltip("終了時の背景の不透明度（1=真っ黒）")]
+        [Range(0f, 1f)]
         public float backgroundEndAlpha = 1f;
 
         [Tooltip("背景が完全に黒くなった後も、時計を刻み続けながら黒いままにする追加時間（秒）")]
+        [Range(0f, 10f)]
         public float blackHoldDuration = 1.5f;
 
         /// <summary>この演出を最初から最後まで再生する。終わるまで呼び出し元をブロックする想定。</summary>

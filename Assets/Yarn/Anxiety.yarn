@@ -19,6 +19,8 @@
 
 title: Anxiety
 ---
+<<background "Room">>
+
 05\:30 クラリオン自宅
 
 目覚ましが鳴るより先に、クラリオンは目を開ける。
@@ -30,6 +32,8 @@ title: Anxiety
 
 title: Anxiety_Train
 ---
+<<background "Train">>
+
 06\:15 満員電車
 
 誰かの鞄が何度も背中に当たる。
@@ -65,8 +69,11 @@ title: Anxiety_Train_Avoid
 
 title: Anxiety_Office
 ---
+<<background "Office">>
+
 14\:30 会社
 
+<<portrait "Boss">>
 上司: 明日から連休なんだけどさ。週明けに備えて、明日も出てもらえる？
 
 -> 「はい」
@@ -100,6 +107,7 @@ title: Anxiety_Office_Refuse
 
 title: Anxiety_InnerVoice
 ---
+<<portrait "None">>
 
 ？？？: このままでいいのかな。
 
@@ -115,6 +123,8 @@ title: Anxiety_InnerVoice
 
 title: Anxiety_Home
 ---
+<<background "Room">>
+
 帰宅。
 
 PCを開くが、好きだったゲームを起動する気にはならない。
@@ -196,4 +206,5 @@ title: Anxiety_TakeMed
 //時計が **1:42、3:16、4:03** と進む。画面のノイズが増え、精神世界パートに移る
 
 <<start_minigame "FuanBattle">>
+<<jump Apathy>>
 ===

@@ -23,8 +23,14 @@ namespace AngerBattle
         public AudioClip chimeClip;
 
         [Header("タイミング")]
+        [Tooltip("白へフェードインする時間（秒）")]
+        [Range(0.1f, 10f)]
         public float fadeInDuration = 1.2f;
+        [Tooltip("真っ白なまま静止する時間（秒）")]
+        [Range(0f, 10f)]
         public float holdDuration = 1.5f;
+        [Tooltip("白から透明へフェードアウトする時間（秒）")]
+        [Range(0.1f, 10f)]
         public float fadeOutDuration = 1.5f;
 
         /// <summary>

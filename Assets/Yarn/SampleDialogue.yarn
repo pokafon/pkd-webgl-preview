@@ -1,8 +1,0 @@
-title: Start
----
-Narrator: Yarn Spinnerの導入テストです。
-Narrator: このセリフが表示されていれば、正常に動作しています。
--> 続ける
-    Narrator: おつかれさまでした！
--> 終了する
-===

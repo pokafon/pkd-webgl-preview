@@ -111,8 +111,8 @@ namespace AngerBattle
 
             if (player != null)
             {
-                // 前回の戦闘で移動を止めたままになっている場合に備えて復帰させる
-                player.enabled = true;
+                // 開始演出（コンタックのセリフ）が表示されている間は移動できないようにしておく
+                player.enabled = false;
             }
             if (enemy != null)
             {
@@ -127,6 +127,12 @@ namespace AngerBattle
         {
             // --- 0. 開始演出：コンタックの一言を表示し、スペースキー入力を待つ ---
             yield return StartCoroutine(ShowLineAndWaitForSpace(startLine));
+
+            // セリフが消えたら、避けフェーズに向けて移動を解禁する
+            if (player != null)
+            {
+                player.enabled = true;
+            }
 
             // --- 1. BGMを再生しながら、3つの台詞を順番に流す ---
             if (bgm != null)
@@ -169,7 +175,7 @@ namespace AngerBattle
             }
 
             enemy.OnDefeated -= HandleEnemyDefeated;
-            enemy.SetPresent(false);
+            // 撃破後は敵を白くするだけで、非表示にはしない
             HideLine();
 
             // --- 5. 怒り戦終了 ---

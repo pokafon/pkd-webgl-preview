@@ -32,15 +32,29 @@ namespace AngerBattle
         [Tooltip("登場時に定位置までスライドしてくるのにかかる時間（秒）")]
         public float appearDuration = 0.6f;
 
+        [Header("撃破演出")]
+        [Tooltip("撃破時に差し替える白いスプライト（未設定なら見た目は変わらない。素材のColorは乗算ティントのため、色付きスプライトをColor変更だけで白くすることはできない）")]
+        public Sprite defeatedSprite;
+
         private int currentHits = 0;
         private bool isPresent = false;
         private Vector3 restingPosition;
         private Coroutine appearCoroutine;
+        private SpriteRenderer spriteRenderer;
+        private Color originalColor;
+        private Sprite originalSprite;
 
         void Awake()
         {
             // シーンに配置されている位置を「定位置」として覚えておく
             restingPosition = transform.position;
+
+            spriteRenderer = GetComponent<SpriteRenderer>();
+            if (spriteRenderer != null)
+            {
+                originalColor = spriteRenderer.color;
+                originalSprite = spriteRenderer.sprite;
+            }
 
             // 最初は非表示（台詞が流れきるまで登場しない）
             SetPresent(false);
@@ -60,6 +74,11 @@ namespace AngerBattle
 
             if (present)
             {
+                if (spriteRenderer != null)
+                {
+                    spriteRenderer.color = originalColor;
+                    spriteRenderer.sprite = originalSprite;
+                }
                 gameObject.SetActive(true);
                 appearCoroutine = StartCoroutine(AppearFromRight());
             }
@@ -98,6 +117,16 @@ namespace AngerBattle
             currentHits++;
             if (currentHits >= hitsToDefeatThisTurn)
             {
+                // 撃破演出：非表示にはせず、白いスプライトに差し替えるだけ
+                // （素材のColorは乗算ティントなので、色付きスプライトのままColorを白にしても見た目は変わらない）
+                if (spriteRenderer != null)
+                {
+                    spriteRenderer.color = Color.white;
+                    if (defeatedSprite != null)
+                    {
+                        spriteRenderer.sprite = defeatedSprite;
+                    }
+                }
                 OnDefeated?.Invoke();
             }
         }

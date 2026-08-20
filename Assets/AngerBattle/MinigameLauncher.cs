@@ -40,10 +40,14 @@ namespace AngerBattle
         public GoodMorningOutro goodMorningOutro;
 
         [Tooltip("敵に攻撃が命中してから「Good Morning」演出が始まるまでに置く間（秒）。命中の余韻を作るため")]
+        [Range(0f, 5f)]
         public float postDefeatPauseSeconds = 1.0f;
 
         [Tooltip("戦闘中は隠したいダイアログUIなどのルート（任意、未設定でも可）")]
         public GameObject dialogueUIRoot;
+
+        [Tooltip("戦闘中は隠したい背景・立ち絵（DialogueVisuals）のルート（任意、未設定でも可）")]
+        public GameObject dialogueVisualsRoot;
 
         private CanvasGroup dialogueCanvasGroup;
         private TaskCompletionSource<bool> battleFinishedSource;
@@ -79,10 +83,13 @@ namespace AngerBattle
         public KeyCode debugMenuKey = KeyCode.F1;
 
         [Tooltip("メニューから直接ジャンプできるYarnのノード名（各ステージの開始ノードなど）")]
-        public string[] debugStoryNodes = new string[] { "Anger", "Anxiety" };
+        public string[] debugStoryNodes = new string[] { "Anger", "Anxiety", "Apathy" };
 
         [Tooltip("メニューから直接単体起動できるミニゲーム名")]
         public string[] debugMinigames = new string[] { "IkariBattle", "FuanBattle" };
+
+        [Tooltip("「ミニゲーム単体起動」ボタンで戦闘が終わった後、自動でジャンプする次の現実パートのYarnノード名")]
+        public string[] debugMinigameNextNodes = new string[] { "Anxiety", "Apathy" };
 
         private DialogueRunner debugDialogueRunner;
         private bool debugMenuVisible = false;
@@ -114,12 +121,14 @@ namespace AngerBattle
 
             GUILayout.Space(8);
             GUILayout.Label("ミニゲーム単体起動");
-            foreach (var minigame in debugMinigames)
+            for (int i = 0; i < debugMinigames.Length; i++)
             {
+                string minigame = debugMinigames[i];
+                string nextNode = (i < debugMinigameNextNodes.Length) ? debugMinigameNextNodes[i] : null;
                 if (GUILayout.Button(minigame))
                 {
                     debugMenuVisible = false;
-                    _ = StartMinigame(minigame);
+                    _ = RunDebugMinigameThenContinue(minigame, nextNode);
                 }
             }
 
@@ -151,6 +160,17 @@ namespace AngerBattle
             SetDialogueVisible(true);
 
             _ = debugDialogueRunner.StartDialogue(nodeName);
+        }
+
+        /// <summary>「ミニゲーム単体起動」ボタン用：戦闘を単体起動し、終了後に指定ノードがあれば自動でジャンプする。</summary>
+        private async Task RunDebugMinigameThenContinue(string minigameName, string nextNode)
+        {
+            await StartMinigame(minigameName);
+
+            if (!string.IsNullOrEmpty(nextNode))
+            {
+                JumpToStoryNode(nextNode);
+            }
         }
 #endif
 
@@ -191,13 +211,15 @@ namespace AngerBattle
         {
             battleFinishedSource = new TaskCompletionSource<bool>();
 
-            SetDialogueVisible(false);
-            root.SetActive(true);
-
+            // 時計＋ノイズ導入演出の間は、直前に表示されていた背景（会話の背景）を
+            // そのまま見せ続けたいので、バトルの背景・ルートはここではまだ出さない。
             if (preStartIntro != null)
             {
                 await preStartIntro();
             }
+
+            SetDialogueVisible(false);
+            root.SetActive(true);
 
             startBattle(() => OnEnemyDefeated(root, postBattleOutro));
 
@@ -291,6 +313,13 @@ namespace AngerBattle
             {
                 // CanvasGroupが見つからない場合のフォールバック。
                 dialogueUIRoot.SetActive(visible);
+            }
+
+            // 背景・立ち絵はScreen Space - OverlayのCanvasのため、
+            // 非表示にしないと戦闘中もバトルの見た目より手前に描画されてしまう。
+            if (dialogueVisualsRoot != null)
+            {
+                dialogueVisualsRoot.SetActive(visible);
             }
         }
     }

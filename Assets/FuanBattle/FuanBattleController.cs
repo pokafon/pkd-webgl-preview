@@ -95,6 +95,8 @@ namespace AngerBattle
         public Vector2 erraticSpeedRange = new Vector2(2f, 7f);
         [Tooltip("最後の文字が画面外まで流れきるのを待つ時間の見積もりに使う速度")]
         public float travelTimeEstimateSpeed = 6f;
+        [Tooltip("同じ台詞内で、後の文字が前の文字を追い越さないように保つ最小間隔")]
+        public float leaderMinGap = 0.5f;
 
         [Header("不安登場演出")]
         [Tooltip("不安登場からセリフ表示までに空ける拍数（現状は1拍）")]
@@ -139,8 +141,8 @@ namespace AngerBattle
 
             if (player != null)
             {
-                // 前回の戦闘で移動を止めたままになっている場合に備えて復帰させる
-                player.enabled = true;
+                // 開始演出（コンタックのセリフ）が表示されている間は移動できないようにしておく
+                player.enabled = false;
             }
             if (enemy != null)
             {
@@ -155,6 +157,12 @@ namespace AngerBattle
         {
             // --- 0. 開始演出：コンタックの一言を表示し、スペースキー入力を待つ ---
             yield return StartCoroutine(ShowLineAndWaitForSpace(startLine));
+
+            // セリフが消えたら、避けフェーズに向けて移動を解禁する
+            if (player != null)
+            {
+                player.enabled = true;
+            }
 
             // --- 1. BGMを再生しながら、主軸3台詞＋合いの手を流す ---
             if (bgm != null)
@@ -200,7 +208,7 @@ namespace AngerBattle
             }
 
             enemy.OnDefeated -= HandleEnemyDefeated;
-            enemy.SetPresent(false);
+            // 撃破後は敵を白くするだけで、非表示にはしない
             HideLine();
 
             // --- 5. 不安戦終了 ---
@@ -301,11 +309,12 @@ namespace AngerBattle
         {
             for (int p = 0; p < phraseList.Length; p++)
             {
+                FallingWord previous = null;
                 foreach (char c in phraseList[p])
                 {
                     if (!char.IsWhiteSpace(c))
                     {
-                        SpawnFallingCharacter(c.ToString(), color);
+                        previous = SpawnFallingCharacter(c.ToString(), color, previous);
                     }
 
                     float wait = charInterval + UnityEngine.Random.Range(-spawnJitter, spawnJitter);
@@ -327,11 +336,12 @@ namespace AngerBattle
         {
             yield return new WaitForSeconds(startDelay);
 
+            FallingWord previous = null;
             foreach (char c in phrase)
             {
                 if (!char.IsWhiteSpace(c))
                 {
-                    SpawnFallingCharacter(c.ToString(), fillerColor);
+                    previous = SpawnFallingCharacter(c.ToString(), fillerColor, previous);
                 }
 
                 float wait = charInterval + UnityEngine.Random.Range(-spawnJitter, spawnJitter);
@@ -347,7 +357,11 @@ namespace AngerBattle
             battleDefeated = true;
         }
 
-        private void SpawnFallingCharacter(string character, Color color)
+        /// <summary>
+        /// 1文字分の落下文字を生成する。leaderに同じ台詞内で直前に出した文字を渡すと、
+        /// 追い越さないよう足止めされる（戻り値を次の文字のleaderとして渡していく）。
+        /// </summary>
+        private FallingWord SpawnFallingCharacter(string character, Color color, FallingWord leader)
         {
             float x = UnityEngine.Random.Range(spawnXRange.x, spawnXRange.y);
             float y = UnityEngine.Random.Range(spawnYRange.x, spawnYRange.y);
@@ -376,6 +390,10 @@ namespace AngerBattle
             falling.erraticChangeInterval = erraticChangeInterval;
             falling.erraticAngleSpread = erraticAngleSpread;
             falling.erraticSpeedRange = erraticSpeedRange;
+            falling.leader = leader;
+            falling.minLeaderGap = leaderMinGap;
+
+            return falling;
         }
 
         private void FireDenialBullet()

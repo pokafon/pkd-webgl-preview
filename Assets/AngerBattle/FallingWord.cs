@@ -37,6 +37,13 @@ namespace AngerBattle
         [Tooltip("蛇行：このY座標の範囲を超えないよう、上下の画面端で跳ね返る（画面外に出て読めなくなるのを防ぐ）")]
         public Vector2 erraticVerticalBounds = new Vector2(-4f, 4f);
 
+        [Header("追い越し防止（同じ台詞内の文字順を保つ）")]
+        [Tooltip("同じ台詞内で、この文字より先に出た文字。nullなら制約なし")]
+        public FallingWord leader;
+
+        [Tooltip("leaderより右側（x座標が大きい側）にこの間隔以上を保つ。leaderに追いつきそうになったらここで足止めされる")]
+        public float minLeaderGap = 0.5f;
+
         private Vector2 erraticDirection = Vector2.left;
         private float erraticSpeed;
         private float erraticTimer;
@@ -48,6 +55,8 @@ namespace AngerBattle
 
         void Update()
         {
+            Vector3 nextPos;
+
             if (erraticMovement)
             {
                 erraticTimer -= Time.deltaTime;
@@ -60,7 +69,7 @@ namespace AngerBattle
                     erraticSpeed = Random.Range(erraticSpeedRange.x, erraticSpeedRange.y);
                 }
 
-                Vector3 nextPos = transform.position + (Vector3)(erraticDirection * (erraticSpeed * Time.deltaTime));
+                nextPos = transform.position + (Vector3)(erraticDirection * (erraticSpeed * Time.deltaTime));
 
                 // 上下の画面端を超えそうになったら跳ね返す（読めない位置まで飛んでいくのを防ぐ）
                 if (nextPos.y > erraticVerticalBounds.y)
@@ -73,13 +82,23 @@ namespace AngerBattle
                     nextPos.y = erraticVerticalBounds.x;
                     erraticDirection.y = Mathf.Abs(erraticDirection.y);
                 }
-
-                transform.position = nextPos;
             }
             else
             {
-                transform.position += Vector3.left * speed * Time.deltaTime;
+                nextPos = transform.position + Vector3.left * speed * Time.deltaTime;
             }
+
+            // 同じ台詞内で先に出た文字（leader）を追い越さないよう、x座標を足止めする
+            if (leader != null)
+            {
+                float minX = leader.transform.position.x + minLeaderGap;
+                if (nextPos.x < minX)
+                {
+                    nextPos.x = minX;
+                }
+            }
+
+            transform.position = nextPos;
 
             if (transform.position.x < destroyXPosition)
             {
