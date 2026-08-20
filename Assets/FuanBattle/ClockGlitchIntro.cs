@@ -136,6 +136,8 @@ namespace AngerBattle
                     );
                 }
 
+                RandomizeNoiseBlocks(noiseBlockCountEnd);
+
                 PlayTick();
 
                 yield return new WaitForSeconds(tickInterval);
