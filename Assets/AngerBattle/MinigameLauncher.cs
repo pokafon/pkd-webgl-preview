@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Threading.Tasks;
+using BedFlight;
 using UnityEngine;
 using Yarn.Unity;
 
@@ -32,6 +33,12 @@ namespace AngerBattle
 
         [Tooltip("不安戦の進行を管理するコントローラー（fuanBattleRootの中にあるもの）")]
         public FuanBattleController fuanBattleController;
+
+        [Tooltip("ベッド飛行一式をまとめた親オブジェクト（普段は非アクティブにしておく）")]
+        public GameObject bedFlightRoot;
+
+        [Tooltip("ベッド飛行の進行を管理するコントローラー（bedFlightRootの中にあるもの）")]
+        public BedFlightController bedFlightController;
 
         [Tooltip("精神世界パートに入るたびに挟む「時計＋ノイズ」導入演出（怒り戦・不安戦共通、シーン直下、任意）")]
         public ClockGlitchIntro clockGlitchIntro;
@@ -82,7 +89,7 @@ namespace AngerBattle
         public string[] debugStoryNodes = new string[] { "Anger", "Anxiety" };
 
         [Tooltip("メニューから直接単体起動できるミニゲーム名")]
-        public string[] debugMinigames = new string[] { "IkariBattle", "FuanBattle" };
+        public string[] debugMinigames = new string[] { "IkariBattle", "FuanBattle", "BedFlight" };
 
         private DialogueRunner debugDialogueRunner;
         private bool debugMenuVisible = false;
@@ -148,6 +155,10 @@ namespace AngerBattle
             {
                 fuanBattleRoot.SetActive(false);
             }
+            if (bedFlightRoot != null)
+            {
+                bedFlightRoot.SetActive(false);
+            }
             SetDialogueVisible(true);
 
             _ = debugDialogueRunner.StartDialogue(nodeName);
@@ -171,6 +182,9 @@ namespace AngerBattle
                 case "FuanBattle":
                     await instance.RunFuanBattle();
                     break;
+                case "BedFlight":
+                    await instance.RunBedFlight();
+                    break;
                 default:
                     Debug.LogWarning($"[MinigameLauncher] 未対応のミニゲーム名です: {minigameName}");
                     break;
@@ -185,6 +199,17 @@ namespace AngerBattle
         private Task RunFuanBattle()
         {
             return RunBattle(fuanBattleRoot, fuanBattleController.StartBattle, PlayClockGlitchIntroIfPresent, PlayGoodMorningOutroIfPresent);
+        }
+
+        /// <summary>
+        /// ベッド飛行はコンタックを飲んで怒り・不安を倒した後の話であり、
+        /// 服薬直後の「時計＋ノイズ」導入演出（ClockGlitchIntro）や
+        /// 撃破後の「Good Morning」演出（GoodMorningOutro、どちらも精神世界への入退室用）は使わない。
+        /// 終了演出（暗転）はBedFlightController側で完結させている。
+        /// </summary>
+        private Task RunBedFlight()
+        {
+            return RunBattle(bedFlightRoot, bedFlightController.StartBattle, null, null);
         }
 
         private async Task RunBattle(GameObject root, Action<Action> startBattle, Func<Task> preStartIntro, Func<Action, Task> postBattleOutro)
