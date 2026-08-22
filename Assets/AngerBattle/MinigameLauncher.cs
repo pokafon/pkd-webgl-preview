@@ -70,6 +70,14 @@ namespace AngerBattle
             {
                 dialogueCanvasGroup = dialogueUIRoot.GetComponent<CanvasGroup>();
             }
+
+            // シーン保存時の状態がどうであれ、ゲーム開始時は必ず全ての戦闘ルートを
+            // 非アクティブにする（誤ってアクティブなまま保存されていると、
+            // 使っていないミニゲームの背景・物理演算などがPlay開始直後から動き続けて
+            // 重くなる原因になるため、ここで安全側に倒す）。
+            if (battleRoot != null) battleRoot.SetActive(false);
+            if (fuanBattleRoot != null) fuanBattleRoot.SetActive(false);
+            if (bedFlightRoot != null) bedFlightRoot.SetActive(false);
         }
 
         private void OnDestroy()
