@@ -54,6 +54,14 @@ namespace BedFlight
         void Awake()
         {
             whiteSquare = CreateWhiteSquareSprite();
+
+            // skyはシーン側で見た目（大きさ・位置）だけ用意してもらい、
+            // スプライト自体はここで割り当てる（空用のスプライトアセットを別途用意しなくて済むように）
+            if (sky != null && sky.sprite == null)
+            {
+                sky.sprite = whiteSquare;
+            }
+
             SpawnLayer(clouds, cloudCount, "Cloud", -2);
             SpawnLayer(buildings, buildingCount, "Building", -1);
             ApplySkyColor();

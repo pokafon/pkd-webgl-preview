@@ -196,6 +196,9 @@ namespace BedFlight
 
             Vector3 spawnPos = contac != null ? contac.transform.position : contacRestingPosition;
             GameObject bulletObj = Instantiate(contacBulletPrefab, spawnPos, Quaternion.identity);
+            // contacBulletPrefabは（正式なPrefabアセットではなく）シーン上の非アクティブな
+            // テンプレートオブジェクトを指すこともあるため、複製後は明示的にアクティブ化する
+            bulletObj.SetActive(true);
             ContacBullet bullet = bulletObj.GetComponent<ContacBullet>();
 
             bool hit = false;
