@@ -15,13 +15,14 @@ namespace BedFlight
     ///
     /// 【全体の流れ】
     /// 0. （任意）開始演出の一言を表示し、スペースキー入力を待つ
+    /// 0.5. （houseIntro設定時、任意）家からベッドが飛び出すアニメーション（HouseIntro）。
+    ///    飛び出した後、家はその場から背景のビルと同じ速度でスクロールしていく
     /// 1. 開放フェーズ（freedomDurationSeconds）：プレイヤーは画面内を自由に移動できる。
     ///    追跡演出は一切出さず、空の色が徐々に明るく開けていく（CityBackgroundScroller.SetOpenness）
-    /// 2. チラ見せフェーズ（chaseDurationSeconds）：開放感を保ったまま、コンタックが画面端に
-    ///    一瞬だけ姿を見せては引っ込む（ContacChaser.Peek）。時間とともに頻度が増え、距離が近くなる
-    /// 3. クライマックス：プレイヤー操作を止め、コンタックが本登場（ContacChaser.AppearFully）。
+    /// 2. クライマックス：ベッドをコンタックの正面（画面中央）へ自動移動させてから、
+    ///    コンタックが本登場（ContacChaser.AppearFully）。
     ///    セリフを表示してスペースキーで読み進めた後、一拍置いて必ず命中する一撃（ContacBullet）を放つ
-    /// 4. 命中後、画面を暗転させてから終了を通知する（この直後、呼び出し元が元の画面に戻す）
+    /// 3. 命中後、画面を暗転させてから終了を通知する（この直後、呼び出し元が元の画面に戻す）
     ///
     /// このミニゲームには現状「よけて生き残る」要素はない
     /// （企画上、最後は必ずコンタックに見つかって連れ戻される想定のため）。
@@ -35,41 +36,41 @@ namespace BedFlight
         public ContacChaser contac;
         [Tooltip("Collider2D（Is Trigger）付きのContacBulletプレハブ")]
         public GameObject contacBulletPrefab;
+        [Tooltip("BGM（湖面のワルツ）の再生を管理するコンポーネント（怒り戦・不安戦と同じBattleBGMを流用）")]
+        public AngerBattle.BattleBGM bgm;
+
+        [Tooltip("ベッド（プレイヤー）の色。EnemySprite.pngを流用する設計だったが、" +
+            "後から怒り戦用に絵柄がトゲトゲの爆発形状へ差し替えられてしまい「ベッド」に見えなくなったため、" +
+            "実行時にこの色の単色矩形を生成して上書きする（既存素材の絵柄変更に影響されないようにする）")]
+        public Color bedColor = new Color(0.62f, 0.45f, 0.32f);
 
         [Header("セリフ表示（現実パートと同じ見た目、任意）")]
         public TMP_Text attackLineText;
         public TMP_Text characterNameText;
         public GameObject lineBackground;
         [Tooltip("開始時、プレイヤー操作待ちで表示する一言。空文字なら演出をスキップしていきなり操作開始する")]
-        public string startLine = "主人公: 少しだけ、遠くに行きたい。";
+        public string startLine = "";
         [Tooltip("クライマックスでコンタック本登場後に表示するセリフ")]
         [TextArea]
         public string contacLine = "コンタック: 見つけた。\n現実に戻ろう。";
 
+        [Header("開始演出：家からベッドが飛び出す（任意）")]
+        [Tooltip("家のシルエット。設定すると、開始の一言の後、ここからベッドが飛び出すアニメーションが入る。" +
+            "未設定なら従来通り、シーン配置のままの位置からいきなり操作可能になる")]
+        public HouseIntro houseIntro;
+        [Tooltip("家から飛び出して、開放フェーズの開始位置（シーン配置の値）へ移動するのにかける時間（秒）")]
+        public float burstOutDuration = 0.4f;
+
         [Header("開放フェーズ（追跡演出なし・自由に飛べる）")]
         [Tooltip("開放フェーズの長さ（秒）。この間に空の色が徐々に明るく開けていく")]
-        public float freedomDurationSeconds = 14f;
-
-        [Header("チラ見せフェーズ（開放感を保ちつつ、少しずつ緊張を積む）")]
-        [Tooltip("チラ見せフェーズの長さ（秒）")]
-        public float chaseDurationSeconds = 9f;
-        [Tooltip("チラ見せの間隔（フェーズ開始直後・秒）")]
-        public float peekIntervalStart = 3.5f;
-        [Tooltip("チラ見せの間隔（フェーズ終盤・秒）。だんだん短くなる")]
-        public float peekIntervalEnd = 0.9f;
-        [Tooltip("1回のチラ見せを表示し続ける時間（秒）")]
-        public float peekShowDuration = 0.5f;
-        [Tooltip("チラ見せが出現するX座標（フェーズ開始直後、画面端寄り）")]
-        public float peekEdgeXFar = 7.5f;
-        [Tooltip("チラ見せが出現するX座標（フェーズ終盤、少し内側まで近づく）")]
-        public float peekEdgeXNear = 5f;
-        [Tooltip("チラ見せが出現するY座標の範囲")]
-        public Vector2 peekYRange = new Vector2(-3f, 3f);
+        public float freedomDurationSeconds = 25f;
 
         [Header("クライマックス（コンタック本登場〜一撃）")]
-        [Tooltip("コンタックの定位置（本登場後にとどまる位置）")]
-        public Vector3 contacRestingPosition = new Vector3(4f, 0f, 0f);
-        [Tooltip("本登場時、この距離だけ右側の画面外からスライドしてくる")]
+        [Tooltip("コンタックの定位置（本登場後にとどまる位置。左端から登場するため負の値）")]
+        public Vector3 contacRestingPosition = new Vector3(-4f, 0f, 0f);
+        [Tooltip("敵登場と同時に、ベッドをこの秒数で自動移動させる（怒り戦のMovePlayerToCenterと同じ狙い）")]
+        public float moveToRestingDuration = 0.3f;
+        [Tooltip("本登場時、この距離だけ左側の画面外からスライドしてくる")]
         public float appearFromOffsetX = 6f;
         [Tooltip("本登場のスライドインにかける時間（秒）")]
         public float appearDuration = 0.8f;
@@ -86,6 +87,9 @@ namespace BedFlight
         public float fadeDuration = 1.2f;
 
         private Action onBattleFinished;
+        private Vector3 burstOutTargetPosition;
+        private SpriteRenderer[] playerSpriteRenderers;
+        private int[] playerOriginalSortingOrders;
 
         /// <summary>
         /// 外部（MinigameLauncherなど）から呼び出して開始する。
@@ -95,10 +99,42 @@ namespace BedFlight
         {
             onBattleFinished = battleFinishedCallback;
 
-            if (player != null) player.enabled = true;
+            if (player != null)
+            {
+                // 冒頭の一言を読み終える（スペースキーで進める）までは操作不可にする。
+                // 有効にしたまま一言を表示すると、まだ読んでいる最中でもベッドが動かせてしまい、
+                // 「もう始まっている」と誤解される原因になっていたため。
+                player.enabled = false;
+                var bedSprite = player.GetComponent<SpriteRenderer>();
+                if (bedSprite != null)
+                {
+                    bedSprite.sprite = CreateSolidSquareSprite();
+                    bedSprite.color = bedColor;
+                }
+
+                if (houseIntro != null)
+                {
+                    // 開放フェーズでの本来の開始位置（シーン配置の値）を、家から飛び出した後の
+                    // 着地先として覚えておいてから、ベッドを一旦家の中の位置へ移す
+                    burstOutTargetPosition = player.transform.position;
+                    player.transform.position = houseIntro.GetLaunchStartPosition();
+
+                    // 「家の中に隠れている」ように見せるため、ベッド（＋乗っている人）のSorting Orderを
+                    // 一時的に家のシルエットより奥へ沈める。家から飛び出す瞬間（RunHouseBurstOut）に戻す
+                    playerSpriteRenderers = player.GetComponentsInChildren<SpriteRenderer>(true);
+                    playerOriginalSortingOrders = new int[playerSpriteRenderers.Length];
+                    for (int i = 0; i < playerSpriteRenderers.Length; i++)
+                    {
+                        playerOriginalSortingOrders[i] = playerSpriteRenderers[i].sortingOrder;
+                        playerSpriteRenderers[i].sortingOrder = houseIntro.silhouetteSortingOrder - 1;
+                    }
+                }
+            }
             if (contac != null) contac.Hide();
             if (background != null) background.SetOpenness(0f);
-            if (background != null) background.SetTension(0f);
+            // 冒頭の一言をスペースキーで進めるまでは、背景（ビル・雲）のスクロールも止めておく。
+            // プレイヤー操作と同様、動いていると「もう始まっている」と誤解されるため。
+            if (background != null) background.SetScrolling(false);
             if (endFadeGroup != null) endFadeGroup.alpha = 0f;
             HideLine();
 
@@ -112,12 +148,51 @@ namespace BedFlight
                 yield return StartCoroutine(ShowLineAndWaitForSpace(startLine));
             }
 
+            if (houseIntro != null)
+            {
+                yield return StartCoroutine(RunHouseBurstOut());
+            }
+
+            if (player != null) player.enabled = true;
+            if (background != null) background.SetScrolling(true);
+            if (bgm != null) bgm.PlayMusic();
+
             yield return StartCoroutine(RunFreedomPhase());
-            yield return StartCoroutine(RunPeekPhase());
             yield return StartCoroutine(RunClimax());
             yield return StartCoroutine(RunEndFade());
 
             onBattleFinished?.Invoke();
+        }
+
+        /// <summary>家の中の位置から、開放フェーズ本来の開始位置まで、ベッドを一気に飛び出させる。</summary>
+        private IEnumerator RunHouseBurstOut()
+        {
+            if (player == null) yield break;
+
+            // 家の中に隠していたベッドを、飛び出す瞬間に見えるようにする
+            if (playerSpriteRenderers != null)
+            {
+                for (int i = 0; i < playerSpriteRenderers.Length; i++)
+                {
+                    playerSpriteRenderers[i].sortingOrder = playerOriginalSortingOrders[i];
+                }
+            }
+
+            Vector3 start = player.transform.position;
+            Vector3 target = burstOutTargetPosition;
+
+            float t = 0f;
+            while (t < burstOutDuration)
+            {
+                t += Time.deltaTime;
+                player.transform.position = Vector3.Lerp(start, target, t / burstOutDuration);
+                yield return null;
+            }
+            player.transform.position = target;
+
+            houseIntro.StartScrolling();
+            // 家が飛び去った後、その場所に空き地（隙間）が残らないよう、ビルを1棟補充する
+            if (background != null) background.FillExcludeZone();
         }
 
         private IEnumerator RunFreedomPhase()
@@ -135,41 +210,15 @@ namespace BedFlight
             if (background != null) background.SetOpenness(1f);
         }
 
-        private IEnumerator RunPeekPhase()
-        {
-            float elapsed = 0f;
-            while (elapsed < chaseDurationSeconds)
-            {
-                float progress = Mathf.Clamp01(elapsed / chaseDurationSeconds);
-                if (background != null) background.SetTension(progress);
-
-                float interval = Mathf.Lerp(peekIntervalStart, peekIntervalEnd, progress);
-                float wait = UnityEngine.Random.Range(interval * 0.7f, interval * 1.3f);
-                yield return new WaitForSeconds(wait);
-                elapsed += wait;
-
-                if (contac != null)
-                {
-                    Vector3 peekPos = RandomPeekPosition(progress);
-                    contac.Peek(peekPos, peekShowDuration);
-                }
-            }
-        }
-
-        private Vector3 RandomPeekPosition(float progress)
-        {
-            float edgeX = Mathf.Lerp(peekEdgeXFar, peekEdgeXNear, progress);
-            float y = UnityEngine.Random.Range(peekYRange.x, peekYRange.y);
-            return new Vector3(edgeX, y, 0f);
-        }
-
         private IEnumerator RunClimax()
         {
-            if (player != null) player.enabled = false;
+            if (bgm != null) bgm.StopMusic();
+
+            yield return StartCoroutine(MovePlayerToRestingPosition());
 
             if (contac != null)
             {
-                Vector3 from = contacRestingPosition + new Vector3(appearFromOffsetX, 0f, 0f);
+                Vector3 from = contacRestingPosition - new Vector3(appearFromOffsetX, 0f, 0f);
                 yield return StartCoroutine(contac.AppearFully(from, contacRestingPosition, appearDuration));
             }
 
@@ -185,6 +234,31 @@ namespace BedFlight
             yield return StartCoroutine(FireAndWaitForHit());
 
             yield return new WaitForSeconds(postHitPauseSeconds);
+        }
+
+        /// <summary>
+        /// クライマックス開始時、ベッドを画面中央（コンタックの正面）へ自動移動させる。
+        /// 怒り戦・不安戦のMovePlayerToCenter()と同じ狙い（コンタックとベッドが重ならないようにする）。
+        /// </summary>
+        private IEnumerator MovePlayerToRestingPosition()
+        {
+            if (player == null) yield break;
+
+            player.enabled = false;
+
+            Vector3 start = player.transform.position;
+            float centerX = (player.minBounds.x + player.maxBounds.x) / 2f;
+            float targetY = Mathf.Clamp(contacRestingPosition.y, player.minBounds.y, player.maxBounds.y);
+            Vector3 target = new Vector3(centerX, targetY, start.z);
+
+            float t = 0f;
+            while (t < moveToRestingDuration)
+            {
+                t += Time.deltaTime;
+                player.transform.position = Vector3.Lerp(start, target, t / moveToRestingDuration);
+                yield return null;
+            }
+            player.transform.position = target;
         }
 
         private IEnumerator FireAndWaitForHit()
@@ -286,6 +360,17 @@ namespace BedFlight
             if (attackLineText != null) attackLineText.gameObject.SetActive(false);
             if (characterNameText != null) characterNameText.gameObject.SetActive(false);
             if (lineBackground != null) lineBackground.SetActive(false);
+        }
+
+        /// <summary>CityBackgroundScrollerの空・雲・ビルと同じ方式で、単色の正方形スプライトを実行時に生成する。</summary>
+        private static Sprite CreateSolidSquareSprite()
+        {
+            var tex = new Texture2D(4, 4, TextureFormat.RGBA32, false);
+            var pixels = new Color[16];
+            for (int i = 0; i < pixels.Length; i++) pixels[i] = Color.white;
+            tex.SetPixels(pixels);
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4);
         }
     }
 }

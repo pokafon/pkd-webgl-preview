@@ -97,6 +97,8 @@ namespace AngerBattle
         public float travelTimeEstimateSpeed = 6f;
         [Tooltip("同じ台詞内で、後の文字が前の文字を追い越さないように保つ最小間隔")]
         public float leaderMinGap = 0.5f;
+        [Tooltip("前の文字との間隔がこの範囲まで縮まったら、ぶつかる前に滑らかに減速し始める")]
+        public float leaderCatchUpSoftZone = 1.5f;
 
         [Header("不安登場演出")]
         [Tooltip("不安登場からセリフ表示までに空ける拍数（現状は1拍）")]
@@ -112,7 +114,7 @@ namespace AngerBattle
         [Tooltip("attackLineTextの背景パネル（現実パートのLine Presenterと同じ見た目の黒背景）")]
         public GameObject lineBackground;
         [Tooltip("精神世界パートに切り替わった直後、プレイヤー操作待ちで表示するコンタックの一言（怒り戦と共通の文言）")]
-        public string startLine = "コンタック: 心の声を震めなくちゃ。";
+        public string startLine = "コンタック: 心の声を鎮めなくちゃ。";
         [Tooltip("不安自身が名乗るセリフ。ブロックごとにスペースキーで読み進める")]
         [TextArea]
         public string[] enemyLines = new string[]
@@ -122,6 +124,8 @@ namespace AngerBattle
         };
         [Tooltip("不安のセリフの後に表示するコンタックの返し。スペースキーで消すと、一拍後に自動で弾を発射する")]
         public string attackLine = "コンタック: それは異常です。";
+        [Tooltip("撃破直後、Good Morning演出の前に表示する一言（レベルアップ演出）。空文字なら表示しない")]
+        public string levelUpLine = "心が少し軽くなった。";
 
         [Header("不安登場時のプレイヤー移動")]
         [Tooltip("不安登場時に、プレイヤーが不安の正面・画面中央へ移動するのにかかる時間（秒）")]
@@ -213,6 +217,13 @@ namespace AngerBattle
 
             // --- 5. 不安戦終了 ---
             onBattleFinished?.Invoke();
+        }
+
+        /// <summary>撃破直後のレベルアップ一言（levelUpLine）を表示し、スペースキーで読み進める。MinigameLauncher側から呼ぶ。</summary>
+        public IEnumerator ShowLevelUpLineAndWait()
+        {
+            if (string.IsNullOrEmpty(levelUpLine)) yield break;
+            yield return StartCoroutine(ShowLineAndWaitForSpace(levelUpLine));
         }
 
         /// <summary>指定したセリフを表示し、スペースキーが押されるまで待ってから隠す。</summary>
@@ -392,6 +403,7 @@ namespace AngerBattle
             falling.erraticSpeedRange = erraticSpeedRange;
             falling.leader = leader;
             falling.minLeaderGap = leaderMinGap;
+            falling.catchUpSoftZone = leaderCatchUpSoftZone;
 
             return falling;
         }

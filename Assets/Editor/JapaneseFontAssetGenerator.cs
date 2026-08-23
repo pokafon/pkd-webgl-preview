@@ -15,13 +15,22 @@ using UnityEngine.TextCore.LowLevel;
 /// </summary>
 public static class JapaneseFontAssetGenerator
 {
-    private const string SourceFontPath = "Assets/Fonts/NotoSansJP-VF.ttf";
+    private const string SourceFontPath = "Assets/Fonts/NotoSansJP-Regular.ttf";
     private const string OutputFontAssetPath = "Assets/Fonts/NotoSansJP SDF.asset";
     private const string OldFontAssetPath = "Assets/Fonts/YuGothicUI SDF.asset";
+    private const string YarnScriptsDir = "Assets/Yarn";
 
-    // Kanji actually used in Prologue.yarn / SampleDialogue.yarn, extracted 2026-08-18.
-    private const string UsedKanji =
-        "一上下中乗了今代仮会何作僕入出分助動化叫司境変夜奥字導少屋席帰常床張怒所打持数料日明時景暗更月机校正死気波浮源演点焼照現環画疲目直真眠示社私立終絵続置聞背胸腰自薄薬表見資起近週遅違選部重開間電面鞄音響頑頭飲高黒";
+    // 各ミニゲームのコントローラーには、Yarnと未接続のままC#のstringリテラルとして
+    // セリフがハードコードされている箇所がある（例：BedFlightControllerの「遠くに行きたい」
+    // 「現実に戻ろう」、FuanBattleControllerの「傷」等）。Yarnスクリプトだけを走査していると、
+    // そこにしか出てこない漢字がフォントアセットに焼き込まれず、実行時に表示できなくなる
+    // （文字が抜けるたびに気づいた分だけ追加、では対症療法になるため、ミニゲーム全体を対象にする）。
+    private static readonly string[] MinigameScriptsDirs =
+    {
+        "Assets/AngerBattle",
+        "Assets/FuanBattle",
+        "Assets/BedFlight",
+    };
 
     [MenuItem("Tools/Yarn Dialogue/Generate Japanese Font Asset")]
     public static void Generate()
@@ -36,13 +45,15 @@ public static class JapaneseFontAssetGenerator
 
         string characterSet = BuildCharacterSet();
 
+        // Must be created as Dynamic to allow TryAddCharacters to populate the atlas;
+        // TryAddCharacters refuses to add anything once atlasPopulationMode is Static.
         TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(
             sourceFont,
             90,                       // sampling point size
             5,                        // atlas padding
             GlyphRenderMode.SDFAA,
             2048, 2048,
-            AtlasPopulationMode.Static);
+            AtlasPopulationMode.Dynamic);
 
         if (fontAsset == null)
         {
@@ -57,8 +68,17 @@ public static class JapaneseFontAssetGenerator
                               $"baked (not present in source font): {missingChars}");
         }
 
-        // Delete any previous output so re-running the tool is idempotent.
-        if (AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(OutputFontAssetPath) != null)
+        // Lock the atlas as Static now that all needed glyphs are baked in, so no
+        // runtime (OS-dependent) glyph generation is attempted on WebGL.
+        fontAsset.atlasPopulationMode = AtlasPopulationMode.Static;
+
+        // Preserve the existing asset's GUID (if any) so scene/prefab references
+        // to it aren't broken by delete+recreate.
+        string existingGuid = AssetDatabase.AssetPathToGUID(OutputFontAssetPath);
+        bool hadExistingAsset = !string.IsNullOrEmpty(existingGuid) &&
+            AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(OutputFontAssetPath) != null;
+
+        if (hadExistingAsset)
         {
             AssetDatabase.DeleteAsset(OutputFontAssetPath);
         }
@@ -72,6 +92,17 @@ public static class JapaneseFontAssetGenerator
         EditorUtility.SetDirty(fontAsset);
         AssetDatabase.SaveAssets();
         AssetDatabase.ImportAsset(OutputFontAssetPath);
+
+        if (hadExistingAsset)
+        {
+            string metaPath = OutputFontAssetPath + ".meta";
+            string metaText = File.ReadAllText(metaPath);
+            metaText = System.Text.RegularExpressions.Regex.Replace(
+                metaText, @"guid: [0-9a-f]{32}", "guid: " + existingGuid);
+            File.WriteAllText(metaPath, metaText);
+            AssetDatabase.ImportAsset(OutputFontAssetPath, ImportAssetOptions.ForceUpdate);
+            Debug.Log($"[JapaneseFontAssetGenerator] Restored original GUID {existingGuid} for {OutputFontAssetPath}.");
+        }
 
         Debug.Log($"[JapaneseFontAssetGenerator] Created {OutputFontAssetPath} " +
                   $"({characterSet.Length} characters baked, atlas 2048x2048, Static population).");
@@ -104,9 +135,34 @@ public static class JapaneseFontAssetGenerator
         // Full-width forms sometimes used in localized UI text.
         for (int c = 0xFF01; c <= 0xFF5E; c++) sb.Append((char)c);
 
-        // Kanji actually present in the current dialogue scripts.
-        sb.Append(UsedKanji);
+        // Kanji (and any other CJK ideographs) actually present in the current dialogue scripts.
+        sb.Append(CollectKanjiFromFiles(YarnScriptsDir, "*.yarn"));
+        foreach (var dir in MinigameScriptsDirs)
+        {
+            sb.Append(CollectKanjiFromFiles(dir, "*.cs"));
+        }
 
+        return new string(sb.ToString().Distinct().ToArray());
+    }
+
+    private static string CollectKanjiFromFiles(string dir, string searchPattern)
+    {
+        var sb = new StringBuilder();
+        var files = Directory.Exists(dir)
+            ? Directory.GetFiles(dir, searchPattern, SearchOption.AllDirectories)
+            : new string[0];
+
+        foreach (var path in files)
+        {
+            string text = File.ReadAllText(path, Encoding.UTF8);
+            foreach (char c in text)
+            {
+                if (c >= 0x4E00 && c <= 0x9FFF) // CJK Unified Ideographs
+                    sb.Append(c);
+            }
+        }
+
+        Debug.Log($"[JapaneseFontAssetGenerator] Scanned {files.Length} {searchPattern} file(s) under {dir}.");
         return new string(sb.ToString().Distinct().ToArray());
     }
 
@@ -124,7 +180,15 @@ public static class JapaneseFontAssetGenerator
             {
                 foreach (var tmp in root.GetComponentsInChildren<TMP_Text>(true))
                 {
-                    if (oldFont != null && tmp.font != oldFont) continue;
+                    // 対象は「まだ旧フォント（YuGothicUI SDF）のまま」か「既にこのNotoSansJP SDFを
+                    // 使っている」もの。後者も対象に含めるのは、このメソッドは毎回フォントアセットを
+                    // 削除→再作成しており、アセット内部のMaterialサブアセットのfileIDが再生成のたびに
+                    // 変わるため。既にnewFontを指しているTMP_Textでも、tmp.font = newFontを
+                    // 再代入し直さないとm_sharedMaterialが古いfileIDのまま壊れて残ってしまう。
+                    bool usesOldFont = oldFont != null && tmp.font == oldFont;
+                    bool usesCurrentNewFont = tmp.font == newFont;
+                    if (!usesOldFont && !usesCurrentNewFont) continue;
+
                     Undo.RecordObject(tmp, "Assign Japanese Font Asset");
                     tmp.font = newFont;
                     EditorUtility.SetDirty(tmp);

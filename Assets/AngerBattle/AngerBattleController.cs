@@ -86,12 +86,14 @@ namespace AngerBattle
         [Tooltip("attackLineTextの背景パネル（現実パートのLine Presenterと同じ見た目の黒背景）")]
         public GameObject lineBackground;
         [Tooltip("精神世界パートに切り替わった直後、プレイヤー操作待ちで表示するコンタックの一言")]
-        public string startLine = "コンタック: 心の声を震めなくちゃ。";
+        public string startLine = "コンタック: 心の声を鎮めなくちゃ。";
         [Tooltip("怒り自身が名乗るセリフ。表示後、スペースキーで読み進める")]
         [TextArea]
-        public string enemyLine = "怒り: わたしは怒り。\n自分を不当に扱うもの、自分を軽視するもの、自分を脅かすものを拒絶したい。";
+        public string enemyLine = "怒り: わたしは怒り。\n自分を不当に扱うもの、自分を軽視するもの、自分を脅かすものを拒絶したい。平等な立場を求める。";
         [Tooltip("怒りのセリフの後に表示するコンタックの返し。スペースキーで消すと、一拍後に自動で弾を発射する")]
         public string attackLine = "コンタック: それは異常です。";
+        [Tooltip("撃破直後、Good Morning演出の前に表示する一言（レベルアップ演出）。空文字なら表示しない")]
+        public string levelUpLine = "頭が少しすっきりした。";
 
         [Header("怒り登場時のプレイヤー移動")]
         [Tooltip("怒り登場時に、プレイヤーが怒りの正面・画面中央へ移動するのにかかる時間（秒）")]
@@ -180,6 +182,13 @@ namespace AngerBattle
 
             // --- 5. 怒り戦終了 ---
             onBattleFinished?.Invoke();
+        }
+
+        /// <summary>撃破直後のレベルアップ一言（levelUpLine）を表示し、スペースキーで読み進める。MinigameLauncher側から呼ぶ。</summary>
+        public IEnumerator ShowLevelUpLineAndWait()
+        {
+            if (string.IsNullOrEmpty(levelUpLine)) yield break;
+            yield return StartCoroutine(ShowLineAndWaitForSpace(levelUpLine));
         }
 
         /// <summary>指定したセリフを表示し、スペースキーが押されるまで待ってから隠す。</summary>

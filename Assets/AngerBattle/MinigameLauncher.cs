@@ -40,11 +40,29 @@ namespace AngerBattle
         [Tooltip("ベッド飛行の進行を管理するコントローラー（bedFlightRootの中にあるもの）")]
         public BedFlightController bedFlightController;
 
+        [Tooltip("記憶回想一式をまとめた親オブジェクト（普段は非アクティブにしておく）")]
+        public GameObject memoryRecallRoot;
+
+        [Tooltip("記憶回想の進行を管理するコントローラー（memoryRecallRootの中にあるもの）")]
+        public MemoryRecall.MemoryRecallController memoryRecallController;
+
+        [Tooltip("記憶回想 悲しみコンタックバトル一式をまとめた親オブジェクト（普段は非アクティブにしておく）")]
+        public GameObject sadnessBattleRoot;
+
+        [Tooltip("記憶回想 悲しみコンタックバトルの進行を管理するコントローラー（sadnessBattleRootの中にあるもの）")]
+        public SadnessBattle.SadnessBattleController sadnessBattleController;
+
         [Tooltip("精神世界パートに入るたびに挟む「時計＋ノイズ」導入演出（怒り戦・不安戦共通、シーン直下、任意）")]
         public ClockGlitchIntro clockGlitchIntro;
 
+        [Tooltip("敵撃破後、Good Morning演出の前に挟む「目覚めの時計」演出（3:00→5:30、怒り戦・不安戦共通、シーン直下、任意）")]
+        public ClockGlitchIntro wakeGlitchIntro;
+
         [Tooltip("精神世界パートで敵を撃破するたびに挟む「Good Morning」演出（怒り戦・不安戦共通、シーン直下、任意）")]
         public GoodMorningOutro goodMorningOutro;
+
+        [Tooltip("撃破直後のレベルアップ演出（「頭が少しすっきりした」等）で鳴らす音（怒り戦・不安戦共通、任意）")]
+        public AudioClip levelUpClip;
 
         [Tooltip("敵に攻撃が命中してから「Good Morning」演出が始まるまでに置く間（秒）。命中の余韻を作るため")]
         [Range(0f, 5f)]
@@ -82,6 +100,8 @@ namespace AngerBattle
             if (battleRoot != null) battleRoot.SetActive(false);
             if (fuanBattleRoot != null) fuanBattleRoot.SetActive(false);
             if (bedFlightRoot != null) bedFlightRoot.SetActive(false);
+            if (memoryRecallRoot != null) memoryRecallRoot.SetActive(false);
+            if (sadnessBattleRoot != null) sadnessBattleRoot.SetActive(false);
         }
 
         private void OnDestroy()
@@ -98,13 +118,13 @@ namespace AngerBattle
         public KeyCode debugMenuKey = KeyCode.F1;
 
         [Tooltip("メニューから直接ジャンプできるYarnのノード名（各ステージの開始ノードなど）")]
-        public string[] debugStoryNodes = new string[] { "Anger", "Anxiety", "Apathy" };
+        public string[] debugStoryNodes = new string[] { "Prologue", "Anger", "Anxiety", "Escape" };
 
         [Tooltip("メニューから直接単体起動できるミニゲーム名")]
-        public string[] debugMinigames = new string[] { "IkariBattle", "FuanBattle", "BedFlight" };
+        public string[] debugMinigames = new string[] { "IkariBattle", "FuanBattle", "BedFlight", "MemoryRecall", "SadnessBattle" };
 
         [Tooltip("「ミニゲーム単体起動」ボタンで戦闘が終わった後、自動でジャンプする次の現実パートのYarnノード名")]
-        public string[] debugMinigameNextNodes = new string[] { "Anxiety", "Apathy" };
+        public string[] debugMinigameNextNodes = new string[] { "Anxiety", "Escape", "Ending" };
 
         private DialogueRunner debugDialogueRunner;
         private bool debugMenuVisible = false;
@@ -176,6 +196,14 @@ namespace AngerBattle
             {
                 bedFlightRoot.SetActive(false);
             }
+            if (memoryRecallRoot != null)
+            {
+                memoryRecallRoot.SetActive(false);
+            }
+            if (sadnessBattleRoot != null)
+            {
+                sadnessBattleRoot.SetActive(false);
+            }
             SetDialogueVisible(true);
 
             _ = debugDialogueRunner.StartDialogue(nodeName);
@@ -213,6 +241,12 @@ namespace AngerBattle
                 case "BedFlight":
                     await instance.RunBedFlight();
                     break;
+                case "MemoryRecall":
+                    await instance.RunMemoryRecall();
+                    break;
+                case "SadnessBattle":
+                    await instance.RunSadnessBattle();
+                    break;
                 default:
                     Debug.LogWarning($"[MinigameLauncher] 未対応のミニゲーム名です: {minigameName}");
                     break;
@@ -221,12 +255,12 @@ namespace AngerBattle
 
         private Task RunAngerBattle()
         {
-            return RunBattle(battleRoot, angerBattleController.StartBattle, PlayClockGlitchIntroIfPresent, PlayGoodMorningOutroIfPresent);
+            return RunBattle(battleRoot, angerBattleController.StartBattle, PlayClockGlitchIntroIfPresent, PlayWakeThenGoodMorningOutro, PlayAngerLevelUpBeat);
         }
 
         private Task RunFuanBattle()
         {
-            return RunBattle(fuanBattleRoot, fuanBattleController.StartBattle, PlayClockGlitchIntroIfPresent, PlayGoodMorningOutroIfPresent);
+            return RunBattle(fuanBattleRoot, fuanBattleController.StartBattle, PlayClockGlitchIntroIfPresent, PlayWakeThenGoodMorningOutro, PlayFuanLevelUpBeat);
         }
 
         /// <summary>
@@ -240,7 +274,27 @@ namespace AngerBattle
             return RunBattle(bedFlightRoot, bedFlightController.StartBattle, null, null);
         }
 
-        private async Task RunBattle(GameObject root, Action<Action> startBattle, Func<Task> preStartIntro, Func<Action, Task> postBattleOutro)
+        /// <summary>
+        /// 記憶回想（子供のころの記憶を想起する2Dマップ探索）。
+        /// 怒り戦・不安戦のような「精神世界パートへの入退室」演出（ClockGlitchIntro/GoodMorningOutro）は使わない
+        /// （本編との接続位置がまだ未定のため、演出の前後関係も未確定）。
+        /// </summary>
+        private Task RunMemoryRecall()
+        {
+            return RunBattle(memoryRecallRoot, memoryRecallController.StartExploration, null, null);
+        }
+
+        /// <summary>
+        /// 記憶回想 悲しみコンタックバトル。怒り戦・不安戦と同じ弾撃ちの仕組みを流用しつつ、
+        /// プレイヤー＝コンタックを操作してお母さん・友達を順番に撃破する（悲しみと決別するため）。
+        /// こちらも本編との接続位置が未定のため、入退室演出は使わない。
+        /// </summary>
+        private Task RunSadnessBattle()
+        {
+            return RunBattle(sadnessBattleRoot, sadnessBattleController.StartBattle, null, null, PlaySadnessLevelUpBeat);
+        }
+
+        private async Task RunBattle(GameObject root, Action<Action> startBattle, Func<Task> preStartIntro, Func<Action, Task> postBattleOutro, Func<Task> preOutroBeat = null)
         {
             battleFinishedSource = new TaskCompletionSource<bool>();
 
@@ -254,7 +308,7 @@ namespace AngerBattle
             SetDialogueVisible(false);
             root.SetActive(true);
 
-            startBattle(() => OnEnemyDefeated(root, postBattleOutro));
+            startBattle(() => OnEnemyDefeated(root, postBattleOutro, preOutroBeat));
 
             await battleFinishedSource.Task;
         }
@@ -279,10 +333,11 @@ namespace AngerBattle
         }
 
         /// <summary>
-        /// 敵撃破直後に呼ばれる。「Good Morning」演出（未設定なら即座に）で
-        /// onReveal（バトルルート非表示・会話UI復帰）を挟んでから、戦闘終了を確定させる。
+        /// 敵撃破直後に呼ばれる。レベルアップ演出（preOutroBeat）→「目覚めの時計」＋「Good Morning」
+        /// 演出（postBattleOutro）の順に挟んでから、onReveal（バトルルート非表示・会話UI復帰）を
+        /// 経て戦闘終了を確定させる。いずれも未設定なら即座にスキップする。
         /// </summary>
-        private async void OnEnemyDefeated(GameObject root, Func<Action, Task> postBattleOutro)
+        private async void OnEnemyDefeated(GameObject root, Func<Action, Task> postBattleOutro, Func<Task> preOutroBeat)
         {
             void Reveal()
             {
@@ -293,6 +348,11 @@ namespace AngerBattle
             if (postDefeatPauseSeconds > 0f)
             {
                 await Task.Delay(TimeSpan.FromSeconds(postDefeatPauseSeconds));
+            }
+
+            if (preOutroBeat != null)
+            {
+                await preOutroBeat();
             }
 
             if (postBattleOutro != null)
@@ -307,8 +367,68 @@ namespace AngerBattle
             battleFinishedSource?.TrySetResult(true);
         }
 
-        /// <summary>敵撃破後の「Good Morning」演出。未設定ならonRevealを即座に呼ぶだけ。</summary>
-        private Task PlayGoodMorningOutroIfPresent(Action onReveal)
+        /// <summary>撃破直後のレベルアップ演出（怒り戦）。レベルアップ音＋一言を表示してスペースキーで読み進める。</summary>
+        private async Task PlayAngerLevelUpBeat()
+        {
+            if (goodMorningOutro != null)
+            {
+                goodMorningOutro.PlaySound(levelUpClip);
+            }
+            if (angerBattleController == null)
+            {
+                return;
+            }
+            var tcs = new TaskCompletionSource<bool>();
+            StartCoroutine(RunLevelUpBeatCoroutine(angerBattleController.ShowLevelUpLineAndWait(), tcs));
+            await tcs.Task;
+        }
+
+        /// <summary>撃破直後のレベルアップ演出（不安戦）。レベルアップ音＋一言を表示してスペースキーで読み進める。</summary>
+        private async Task PlayFuanLevelUpBeat()
+        {
+            if (goodMorningOutro != null)
+            {
+                goodMorningOutro.PlaySound(levelUpClip);
+            }
+            if (fuanBattleController == null)
+            {
+                return;
+            }
+            var tcs = new TaskCompletionSource<bool>();
+            StartCoroutine(RunLevelUpBeatCoroutine(fuanBattleController.ShowLevelUpLineAndWait(), tcs));
+            await tcs.Task;
+        }
+
+        /// <summary>撃破直後のレベルアップ演出（悲しみコンタックバトル）。レベルアップ音＋一言を表示してスペースキーで読み進める。</summary>
+        private async Task PlaySadnessLevelUpBeat()
+        {
+            if (goodMorningOutro != null)
+            {
+                goodMorningOutro.PlaySound(levelUpClip);
+            }
+            if (sadnessBattleController == null)
+            {
+                return;
+            }
+            var tcs = new TaskCompletionSource<bool>();
+            StartCoroutine(RunLevelUpBeatCoroutine(sadnessBattleController.ShowLevelUpLineAndWait(), tcs));
+            await tcs.Task;
+        }
+
+        private IEnumerator RunLevelUpBeatCoroutine(IEnumerator routine, TaskCompletionSource<bool> tcs)
+        {
+            yield return StartCoroutine(routine);
+            tcs.TrySetResult(true);
+        }
+
+        /// <summary>
+        /// 敵撃破後の「目覚めの時計」演出→「Good Morning」演出を1本のコルーチンとして繋げて再生する。
+        /// 目覚めの時計演出が終わり次第すぐ非表示にし（通常のPlay()）、間を置かず同じフレームで
+        /// Good Morning演出をフェードインなし・最初から不透明（白）で始める(skipFadeIn: true)ことで、
+        /// 継ぎ目（隙間から背後の戦闘背景が見えてしまう瞬間）ができないようにする。
+        /// 目覚めの時計演出が未設定ならGood Morning単体（通常のフェードインあり）にフォールバックする。
+        /// </summary>
+        private Task PlayWakeThenGoodMorningOutro(Action onReveal)
         {
             if (goodMorningOutro == null)
             {
@@ -317,13 +437,22 @@ namespace AngerBattle
             }
 
             var outroFinishedSource = new TaskCompletionSource<bool>();
-            StartCoroutine(RunGoodMorningOutroCoroutine(onReveal, outroFinishedSource));
+            StartCoroutine(RunWakeThenGoodMorningOutroCoroutine(onReveal, outroFinishedSource));
             return outroFinishedSource.Task;
         }
 
-        private IEnumerator RunGoodMorningOutroCoroutine(Action onReveal, TaskCompletionSource<bool> outroFinishedSource)
+        private IEnumerator RunWakeThenGoodMorningOutroCoroutine(Action onReveal, TaskCompletionSource<bool> outroFinishedSource)
         {
-            yield return StartCoroutine(goodMorningOutro.Play(onReveal));
+            if (wakeGlitchIntro != null)
+            {
+                yield return StartCoroutine(wakeGlitchIntro.Play());
+                yield return StartCoroutine(goodMorningOutro.Play(onReveal, skipFadeIn: true));
+            }
+            else
+            {
+                yield return StartCoroutine(goodMorningOutro.Play(onReveal));
+            }
+
             outroFinishedSource.TrySetResult(true);
         }
 

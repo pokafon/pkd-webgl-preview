@@ -20,11 +20,8 @@ namespace BedFlight
         public Color closedSkyColor = new Color(0.24f, 0.27f, 0.34f);
         [Tooltip("開放フェーズが進みきった時（気持ちよく飛べている）の空の色")]
         public Color openSkyColor = new Color(0.55f, 0.82f, 1f);
-        [Tooltip("チラ見せフェーズが進みきった時に少し混ざる、不穏な色")]
-        public Color tenseSkyColor = new Color(0.35f, 0.2f, 0.32f);
 
         private float openness = 0f;
-        private float tension = 0f;
 
         [Header("ビル（近景）")]
         public int buildingCount = 14;
@@ -47,6 +44,13 @@ namespace BedFlight
         public float leftBound = -12f;
         public float rightBound = 12f;
 
+        [Header("除外ゾーン（この範囲にはビルを初期配置しない。任意）")]
+        [Tooltip("HouseIntro（開始演出の家）とビルが重ならないようにするための設定。" +
+            "家とビルは同じ速度でスクロールするため、初期配置さえ避ければ以後もずっと重ならない")]
+        public bool hasBuildingExcludeZone = false;
+        public float buildingExcludeZoneMinX = 0f;
+        public float buildingExcludeZoneMaxX = 0f;
+
         private readonly List<Transform> buildings = new List<Transform>();
         private readonly List<Transform> clouds = new List<Transform>();
         private Sprite whiteSquare;
@@ -67,10 +71,20 @@ namespace BedFlight
             ApplySkyColor();
         }
 
+        // クライマックスでプレイヤー操作を止めるのと合わせて、背景のスクロールも止める（既定はtrue）
+        private bool scrolling = true;
+
         void Update()
         {
+            if (!scrolling) return;
             Scroll(buildings, buildingSpeed);
             Scroll(clouds, cloudSpeed);
+        }
+
+        /// <summary>ビル・雲のスクロールを止める/再開する（クライマックスでプレイヤーが止まるのに合わせる用）。</summary>
+        public void SetScrolling(bool value)
+        {
+            scrolling = value;
         }
 
         /// <summary>開放フェーズの進行度（0〜1）。空が徐々に明るく開けていく。</summary>
@@ -80,18 +94,10 @@ namespace BedFlight
             ApplySkyColor();
         }
 
-        /// <summary>チラ見せフェーズの進行度（0〜1）。開放感を大きく壊さない程度に不穏な色を混ぜる。</summary>
-        public void SetTension(float t)
-        {
-            tension = Mathf.Clamp01(t);
-            ApplySkyColor();
-        }
-
         private void ApplySkyColor()
         {
             if (sky == null) return;
-            Color baseColor = Color.Lerp(closedSkyColor, openSkyColor, openness);
-            sky.color = Color.Lerp(baseColor, tenseSkyColor, tension * 0.5f);
+            sky.color = Color.Lerp(closedSkyColor, openSkyColor, openness);
         }
 
         private void SpawnLayer(List<Transform> list, int count, string name, int sortingOrder)
@@ -106,11 +112,52 @@ namespace BedFlight
                 sr.sortingOrder = sortingOrder;
 
                 float x = leftBound + span * (i + Random.value) / count;
+                if (name == "Building" && hasBuildingExcludeZone)
+                {
+                    x = AvoidExcludeZone(x, span);
+                }
                 PlaceRandomly(go.transform, sr, name);
                 go.transform.position = new Vector3(x, go.transform.position.y, 0f);
 
                 list.Add(go.transform);
             }
+        }
+
+        /// <summary>
+        /// 除外ゾーンに、通常のビルと同じ見た目で1棟追加する。
+        /// 除外ゾーンは初期配置時にビルの生成を避けるためだけのものなので、家が飛び去った後もそのまま
+        /// 放置すると「家も無いのにビルだけ生えていない隙間」がずっと残ってしまう。
+        /// 家が飛び立つ瞬間（HouseIntro.StartScrolling呼び出しと同時）にこれを呼び、その場にビルを
+        /// 生成して隙間を埋める。以後は除外ゾーンを無効化し、通常のリサイクルに任せる。
+        /// </summary>
+        public void FillExcludeZone()
+        {
+            if (!hasBuildingExcludeZone) return;
+
+            var go = new GameObject("Building_Fill", typeof(SpriteRenderer));
+            go.transform.SetParent(transform, false);
+            var sr = go.GetComponent<SpriteRenderer>();
+            sr.sprite = whiteSquare;
+            sr.sortingOrder = -1;
+
+            float x = Mathf.Lerp(buildingExcludeZoneMinX, buildingExcludeZoneMaxX, 0.5f);
+            PlaceRandomly(go.transform, sr, "Building");
+            go.transform.position = new Vector3(x, go.transform.position.y, 0f);
+
+            buildings.Add(go.transform);
+            hasBuildingExcludeZone = false;
+        }
+
+        /// <summary>xが除外ゾーンに入っている間、範囲内でランダムに引き直す（家とビルの初期配置が重ならないようにする）。</summary>
+        private float AvoidExcludeZone(float x, float span)
+        {
+            int guard = 0;
+            while (x >= buildingExcludeZoneMinX && x <= buildingExcludeZoneMaxX && guard < 20)
+            {
+                x = leftBound + span * Random.value;
+                guard++;
+            }
+            return x;
         }
 
         private void PlaceRandomly(Transform t, SpriteRenderer sr, string name)

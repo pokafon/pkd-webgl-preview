@@ -36,21 +36,31 @@ namespace AngerBattle
         /// <summary>
         /// この演出を最初から最後まで再生する。onRevealは、画面が真っ白な静止中に
         /// 呼び出し元が背後の画面を切り替えるためのコールバック（フェードアウトで自然に見えてくる）。
+        /// skipFadeInをtrueにすると、フェードインをせず最初から不透明（白）で始める
+        /// （直前に別の演出（目覚めの時計など）が既に画面を白く覆っている場合、
+        /// 継ぎ目なく繋げるために使う）。
         /// </summary>
-        public IEnumerator Play(Action onReveal)
+        public IEnumerator Play(Action onReveal, bool skipFadeIn = false)
         {
-            gameObject.SetActive(true);
-            SetAlpha(0f);
             PlayChime();
 
-            float t = 0f;
-            while (t < fadeInDuration)
+            float t;
+            if (skipFadeIn)
             {
-                t += Time.deltaTime;
-                SetAlpha(Mathf.Clamp01(t / fadeInDuration));
-                yield return null;
+                SetAlpha(1f);
             }
-            SetAlpha(1f);
+            else
+            {
+                SetAlpha(0f);
+                t = 0f;
+                while (t < fadeInDuration)
+                {
+                    t += Time.deltaTime;
+                    SetAlpha(Mathf.Clamp01(t / fadeInDuration));
+                    yield return null;
+                }
+                SetAlpha(1f);
+            }
 
             yield return new WaitForSeconds(holdDuration);
 
@@ -84,11 +94,27 @@ namespace AngerBattle
             }
         }
 
-        private void PlayChime()
+        /// <summary>
+        /// ベル音だけを単独で鳴らす（撃破後のレベルアップ演出等、この演出本体を再生しない場面用）。
+        /// このGameObjectは普段非アクティブにしてあるため、非アクティブなままだと
+        /// AudioSource.PlayOneShotが音を鳴らさない（エラーも出ない）。先に必ずアクティブ化する。
+        /// </summary>
+        public void PlayChime()
         {
-            if (chimeAudioSource != null && chimeClip != null)
+            PlaySound(chimeClip);
+        }
+
+        /// <summary>
+        /// chimeAudioSourceを使って任意のクリップを単独で鳴らす（撃破直後のレベルアップ演出など、
+        /// この演出本体とは別の音を、同じAudioSourceで鳴らしたい場面用）。
+        /// </summary>
+        public void PlaySound(AudioClip clip)
+        {
+            gameObject.SetActive(true);
+
+            if (chimeAudioSource != null && clip != null)
             {
-                chimeAudioSource.PlayOneShot(chimeClip);
+                chimeAudioSource.PlayOneShot(clip);
             }
         }
     }

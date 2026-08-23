@@ -44,6 +44,9 @@ namespace AngerBattle
         [Tooltip("leaderより右側（x座標が大きい側）にこの間隔以上を保つ。leaderに追いつきそうになったらここで足止めされる")]
         public float minLeaderGap = 0.5f;
 
+        [Tooltip("leaderとの間隔がこの範囲まで縮まったら、ぶつかる前に滑らかに減速し始める（0にすると境界で即停止する硬い動きに戻る）")]
+        public float catchUpSoftZone = 1.5f;
+
         private Vector2 erraticDirection = Vector2.left;
         private float erraticSpeed;
         private float erraticTimer;
@@ -88,10 +91,22 @@ namespace AngerBattle
                 nextPos = transform.position + Vector3.left * speed * Time.deltaTime;
             }
 
-            // 同じ台詞内で先に出た文字（leader）を追い越さないよう、x座標を足止めする
+            // 同じ台詞内で先に出た文字（leader）を追い越さないよう、x方向の前進だけを足止めする
+            // （壁にぶつけて即停止させるのではなく、間隔が縮まるにつれて滑らかに減速させることで、
+            // 縦方向の揺れ・動きの質感はそのまま保つ）
             if (leader != null)
             {
                 float minX = leader.transform.position.x + minLeaderGap;
+                float gapBefore = transform.position.x - minX;
+                float dx = nextPos.x - transform.position.x;
+
+                if (dx < 0f && catchUpSoftZone > 0f)
+                {
+                    float easing = Mathf.Clamp01(gapBefore / catchUpSoftZone);
+                    dx *= easing;
+                    nextPos.x = transform.position.x + dx;
+                }
+
                 if (nextPos.x < minX)
                 {
                     nextPos.x = minX;

@@ -11,6 +11,10 @@
 # Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore
 #
 .utmp/
+
+# itch.io配信ツール（butler）等、ローカルの配布用ツール一式。プロジェクトのソースではないので除外
+/.tools/
+
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
