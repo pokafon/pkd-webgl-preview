@@ -89,7 +89,7 @@ namespace AngerBattle
         public string startLine = "コンタック: 心の声を鎮めなくちゃ。";
         [Tooltip("怒り自身が名乗るセリフ。表示後、スペースキーで読み進める")]
         [TextArea]
-        public string enemyLine = "怒り: わたしは怒り。\n自分を不当に扱うもの、自分を軽視するもの、自分を脅かすものを拒絶したい。平等な立場を求める。";
+        public string enemyLine = "怒り: ぼく、もうイヤなんだ。ほしいものを、ほしいって言いたい。やりたいことを、やりたいって言いたい。もう、がまんなんてしたくない。";
         [Tooltip("怒りのセリフの後に表示するコンタックの返し。スペースキーで消すと、一拍後に自動で弾を発射する")]
         public string attackLine = "コンタック: それは異常です。";
         [Tooltip("撃破直後、Good Morning演出の前に表示する一言（レベルアップ演出）。空文字なら表示しない")]
