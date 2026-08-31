@@ -22,6 +22,8 @@ namespace AngerBattle
     {
         /// <summary>このターンで倒された時に呼ばれる</summary>
         public event Action OnDefeated;
+        /// <summary>ダメージを受けた直後に、残りHPと最大HPを通知する。</summary>
+        public event Action<int, int> OnHealthChanged;
 
         [Tooltip("このターンで倒すために必要なヒット数（仕様上は基本1）")]
         public int hitsToDefeatThisTurn = 1;
@@ -43,6 +45,12 @@ namespace AngerBattle
         private SpriteRenderer spriteRenderer;
         private Color originalColor;
         private Sprite originalSprite;
+        private bool isDefeated;
+        private bool damageEnabled = true;
+        private bool useDefeatedSprite = true;
+
+        public int CurrentHealth => Mathf.Max(0, hitsToDefeatThisTurn - currentHits);
+        public int MaxHealth => Mathf.Max(1, hitsToDefeatThisTurn);
 
         void Awake()
         {
@@ -63,8 +71,16 @@ namespace AngerBattle
         /// <summary>怒り本体の登場・非表示を切り替える。登場のたびにヒット数はリセットされる。</summary>
         public void SetPresent(bool present)
         {
+            SetPresent(present, true);
+        }
+
+        /// <summary>登場アニメーションの有無を指定して表示状態を切り替える。</summary>
+        public void SetPresent(bool present, bool animate)
+        {
             isPresent = present;
             currentHits = 0;
+            isDefeated = false;
+            damageEnabled = true;
 
             if (appearCoroutine != null)
             {
@@ -80,7 +96,14 @@ namespace AngerBattle
                     spriteRenderer.sprite = originalSprite;
                 }
                 gameObject.SetActive(true);
-                appearCoroutine = StartCoroutine(AppearFromRight());
+                if (animate)
+                {
+                    appearCoroutine = StartCoroutine(AppearFromRight());
+                }
+                else
+                {
+                    restingPosition = transform.position;
+                }
             }
             else
             {
@@ -91,6 +114,36 @@ namespace AngerBattle
         public bool IsPresent()
         {
             return isPresent;
+        }
+
+        /// <summary>怒り戦用にHP数と登場方法を指定して戦闘を始める。</summary>
+        public void BeginBattle(int hitPoints, bool animate, bool swapSpriteWhenDefeated)
+        {
+            hitsToDefeatThisTurn = Mathf.Max(1, hitPoints);
+            useDefeatedSprite = swapSpriteWhenDefeated;
+            restingPosition = transform.position;
+            SetPresent(true, animate);
+            OnHealthChanged?.Invoke(CurrentHealth, MaxHealth);
+        }
+
+        /// <summary>節目のセリフ中など、一時的に連続被弾を止める。</summary>
+        public void SetDamageEnabled(bool enabled)
+        {
+            damageEnabled = enabled;
+        }
+
+        /// <summary>縦型戦闘で使う見た目を、このオブジェクトの通常スプライトとして設定する。</summary>
+        public void SetBattleSprite(Sprite sprite)
+        {
+            if (sprite == null || spriteRenderer == null)
+            {
+                return;
+            }
+
+            originalSprite = sprite;
+            spriteRenderer.sprite = sprite;
+            originalColor = Color.white;
+            spriteRenderer.color = originalColor;
         }
 
         /// <summary>定位置より右側の画面外から、定位置までゆっくりスライドしてくる。</summary>
@@ -112,17 +165,19 @@ namespace AngerBattle
         /// <summary>攻撃弾がヒットした時にDenialBulletから呼ばれる。</summary>
         public void TakeDamage()
         {
-            if (!isPresent) return;
+            if (!isPresent || isDefeated || !damageEnabled) return;
 
             currentHits++;
+            OnHealthChanged?.Invoke(CurrentHealth, MaxHealth);
             if (currentHits >= hitsToDefeatThisTurn)
             {
+                isDefeated = true;
                 // 撃破演出：非表示にはせず、白いスプライトに差し替えるだけ
                 // （素材のColorは乗算ティントなので、色付きスプライトのままColorを白にしても見た目は変わらない）
                 if (spriteRenderer != null)
                 {
                     spriteRenderer.color = Color.white;
-                    if (defeatedSprite != null)
+                    if (useDefeatedSprite && defeatedSprite != null)
                     {
                         spriteRenderer.sprite = defeatedSprite;
                     }

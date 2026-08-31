@@ -52,6 +52,9 @@ namespace AngerBattle
         [Tooltip("記憶回想 悲しみコンタックバトルの進行を管理するコントローラー（sadnessBattleRootの中にあるもの）")]
         public SadnessBattle.SadnessBattleController sadnessBattleController;
 
+        [Tooltip("記憶回想と悲しみコンタック戦で共有する屋外／屋内マップ")]
+        public MemoryRecall.SadnessMapEnvironment sadnessMapEnvironment;
+
         [Tooltip("精神世界パートに入るたびに挟む「時計＋ノイズ」導入演出（怒り戦・不安戦共通、シーン直下、任意）")]
         public ClockGlitchIntro clockGlitchIntro;
 
@@ -76,6 +79,11 @@ namespace AngerBattle
 
         private CanvasGroup dialogueCanvasGroup;
         private TaskCompletionSource<bool> battleFinishedSource;
+        private Task activeBattleTask;
+        private GameObject activeBattleRoot;
+        private bool battleInProgress;
+        private bool battleFinishing;
+        private int activeBattleRunId;
 
         // Yarn Spinnerはインスタンスメソッドをコマンド登録すると、
         // 第1引数を「呼び出し対象のGameObject名」として解釈してしまう
@@ -102,6 +110,7 @@ namespace AngerBattle
             if (bedFlightRoot != null) bedFlightRoot.SetActive(false);
             if (memoryRecallRoot != null) memoryRecallRoot.SetActive(false);
             if (sadnessBattleRoot != null) sadnessBattleRoot.SetActive(false);
+            if (sadnessMapEnvironment != null) sadnessMapEnvironment.HideMaps(false);
         }
 
         private void OnDestroy()
@@ -184,6 +193,8 @@ namespace AngerBattle
 
             debugMenuVisible = false;
 
+            AbortActiveBattle();
+
             if (battleRoot != null)
             {
                 battleRoot.SetActive(false);
@@ -203,6 +214,10 @@ namespace AngerBattle
             if (sadnessBattleRoot != null)
             {
                 sadnessBattleRoot.SetActive(false);
+            }
+            if (sadnessMapEnvironment != null)
+            {
+                sadnessMapEnvironment.HideMaps();
             }
             SetDialogueVisible(true);
 
@@ -291,26 +306,82 @@ namespace AngerBattle
         /// </summary>
         private Task RunSadnessBattle()
         {
-            return RunBattle(sadnessBattleRoot, sadnessBattleController.StartBattle, null, null, PlaySadnessLevelUpBeat);
+            // 「これで異常なし」までSadnessBattleController内で完結するため、
+            // 旧レベルアップ表示（悲しみが少し和らいだ）は挟まない。
+            return RunBattle(sadnessBattleRoot, sadnessBattleController.StartBattle, null, null);
         }
 
         private async Task RunBattle(GameObject root, Action<Action> startBattle, Func<Task> preStartIntro, Func<Action, Task> postBattleOutro, Func<Task> preOutroBeat = null)
         {
-            battleFinishedSource = new TaskCompletionSource<bool>();
-
-            // 時計＋ノイズ導入演出の間は、直前に表示されていた背景（会話の背景）を
-            // そのまま見せ続けたいので、バトルの背景・ルートはここではまだ出さない。
-            if (preStartIntro != null)
+            if (battleInProgress)
             {
-                await preStartIntro();
+                Debug.LogWarning("[MinigameLauncher] ミニゲームの二重起動を無視し、進行中の終了を待ちます。", this);
+                if (activeBattleTask != null)
+                {
+                    await activeBattleTask;
+                }
+                return;
+            }
+            if (root == null || startBattle == null)
+            {
+                Debug.LogError("[MinigameLauncher] 戦闘ルートまたは開始処理が設定されていません。", this);
+                return;
             }
 
-            SetDialogueVisible(false);
-            root.SetActive(true);
+            int runId = ++activeBattleRunId;
+            battleInProgress = true;
+            battleFinishing = false;
+            activeBattleRoot = root;
+            battleFinishedSource = new TaskCompletionSource<bool>();
+            activeBattleTask = battleFinishedSource.Task;
 
-            startBattle(() => OnEnemyDefeated(root, postBattleOutro, preOutroBeat));
+            // デバッグジャンプや中断の直後でも、別ミニゲームの背景が残らないようにする。
+            DeactivateAllBattleRootsExcept(root);
+            if (sadnessMapEnvironment != null)
+            {
+                sadnessMapEnvironment.HideMaps();
+            }
+            root.SetActive(false);
 
-            await battleFinishedSource.Task;
+            try
+            {
+                // 時計＋ノイズ導入演出の間は、直前に表示されていた背景（会話の背景）を
+                // そのまま見せ続けたいので、バトルの背景・ルートはここではまだ出さない。
+                if (preStartIntro != null)
+                {
+                    await preStartIntro();
+                }
+
+                if (runId != activeBattleRunId)
+                {
+                    return;
+                }
+
+                SetDialogueVisible(false);
+                root.SetActive(true);
+
+                startBattle(() => OnEnemyDefeated(runId, root, postBattleOutro, preOutroBeat));
+
+                await activeBattleTask;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex, this);
+                root.SetActive(false);
+                SetDialogueVisible(true);
+            }
+            finally
+            {
+                if (runId == activeBattleRunId)
+                {
+                    battleFinishedSource?.TrySetResult(true);
+                    battleFinishedSource = null;
+                    activeBattleTask = null;
+                    activeBattleRoot = null;
+                    battleInProgress = false;
+                    battleFinishing = false;
+                }
+            }
         }
 
         /// <summary>不安戦開始前の「時計＋ノイズ」導入演出。未設定なら何もしない。</summary>
@@ -337,34 +408,98 @@ namespace AngerBattle
         /// 演出（postBattleOutro）の順に挟んでから、onReveal（バトルルート非表示・会話UI復帰）を
         /// 経て戦闘終了を確定させる。いずれも未設定なら即座にスキップする。
         /// </summary>
-        private async void OnEnemyDefeated(GameObject root, Func<Action, Task> postBattleOutro, Func<Task> preOutroBeat)
+        private async void OnEnemyDefeated(int runId, GameObject root, Func<Action, Task> postBattleOutro, Func<Task> preOutroBeat)
         {
+            if (runId != activeBattleRunId || root != activeBattleRoot || battleFinishing)
+            {
+                return;
+            }
+            battleFinishing = true;
+            bool revealed = false;
+
             void Reveal()
             {
+                if (revealed || runId != activeBattleRunId)
+                {
+                    return;
+                }
+                revealed = true;
                 root.SetActive(false);
                 SetDialogueVisible(true);
             }
 
-            if (postDefeatPauseSeconds > 0f)
+            try
             {
-                await Task.Delay(TimeSpan.FromSeconds(postDefeatPauseSeconds));
-            }
+                if (postDefeatPauseSeconds > 0f)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(postDefeatPauseSeconds));
+                }
+                if (runId != activeBattleRunId) return;
 
-            if (preOutroBeat != null)
-            {
-                await preOutroBeat();
-            }
+                if (preOutroBeat != null)
+                {
+                    await preOutroBeat();
+                }
+                if (runId != activeBattleRunId) return;
 
-            if (postBattleOutro != null)
-            {
-                await postBattleOutro(Reveal);
+                if (postBattleOutro != null)
+                {
+                    await postBattleOutro(Reveal);
+                }
+                else
+                {
+                    Reveal();
+                }
             }
-            else
+            catch (Exception ex)
             {
+                Debug.LogException(ex, this);
                 Reveal();
             }
+            finally
+            {
+                if (runId == activeBattleRunId)
+                {
+                    Reveal();
+                    battleFinishedSource?.TrySetResult(true);
+                }
+            }
+        }
 
+        private void DeactivateAllBattleRootsExcept(GameObject keepActive)
+        {
+            GameObject[] roots = { battleRoot, fuanBattleRoot, bedFlightRoot, memoryRecallRoot, sadnessBattleRoot };
+            foreach (GameObject candidate in roots)
+            {
+                if (candidate != null && candidate != keepActive)
+                {
+                    candidate.SetActive(false);
+                }
+            }
+        }
+
+        private void AbortActiveBattle()
+        {
+            if (!battleInProgress)
+            {
+                return;
+            }
+
+            activeBattleRunId++;
+            if (activeBattleRoot != null)
+            {
+                activeBattleRoot.SetActive(false);
+            }
+            if (sadnessMapEnvironment != null)
+            {
+                sadnessMapEnvironment.HideMaps();
+            }
             battleFinishedSource?.TrySetResult(true);
+            battleFinishedSource = null;
+            activeBattleTask = null;
+            activeBattleRoot = null;
+            battleInProgress = false;
+            battleFinishing = false;
         }
 
         /// <summary>撃破直後のレベルアップ演出（怒り戦）。レベルアップ音＋一言を表示してスペースキーで読み進める。</summary>

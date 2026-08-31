@@ -6,42 +6,21 @@ using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace MemoryRecall.EditorTools
 {
-    /// <summary>
-    /// 記憶回想（子供のころの記憶を想起する2Dマップ探索）に必要なシーン階層・
-    /// プレハブ・参照配線をエディタスクリプトから一括構築するためのビルダー。
-    /// 背景はユーザー作成のドット絵一枚絵（Assets/Sprites/MAP.png）を読み込んで使用する。
-    /// お母さん・友達の見た目はユーザー作成のドット絵（mum.png/frendA.png）、プレイヤーの見た目は
-    /// 既存の怒り戦用スプライトをそのまま再利用する。
-    ///
-    /// 実行方法：
-    ///   Unityエディタのメニュー「Tools/MemoryRecall/Build Scene」から実行（推奨）。
-    ///   バッチモードの場合は
-    ///   Unity.exe -batchmode -nographics -projectPath &lt;project&gt;
-    ///     -executeMethod MemoryRecall.EditorTools.MemoryRecallSceneBuilder.Build
-    ///
-    /// 何度実行しても安全（MemoryRecallRootを一度破棄してから再構築する。
-    /// 既存のMinigameLauncherは破棄せず、参照フィールドだけ追記する）。
-    /// </summary>
+    /// <summary>手作りの屋外／屋内Gridを使って記憶回想を構築する。</summary>
     public static class MemoryRecallSceneBuilder
     {
         private const string ScenePath = "Assets/Scenes/SampleScene.unity";
         private const string FontPath = "Assets/Fonts/NotoSansJP SDF.asset";
-        private const string PlayerSpritePathInAngerBattle = "Assets/AngerBattle/Sprites/PlayerSprite.png";
-        private const string MapImagePath = "Assets/Sprites/MAP.png";
-        // MAP.pngは32x32pxのドット絵一枚絵（ユーザー作成）。カメラのorthographic size=5（縦の表示範囲=10ユニット）に
-        // 合わせて画像の縦幅がちょうど10ユニットになるよう、Pixels Per Unitを32/10=3.2に設定する。
-        private const float MapPixelsPerUnit = 3.2f;
-        private const float MapWorldSize = 10f;
-
-        private const string MotherImagePath = "Assets/Sprites/mum.png";
-        private const string FriendImagePath = "Assets/Sprites/frendA.png";
-        // キャラクターの絵はマップより高いPixels Per Unitにし、家（ワールド上で約2.25ユニット）に対して
-        // 人物が半分弱くらいの背丈になるよう調整する。
-        private const float CharacterPixelsPerUnit = 16f;
+        private const string PlayerSpritePath = "Assets/Sprites/Player_Placeholder.png";
+        private const string FallbackPlayerSpritePath = "Assets/AngerBattle/Sprites/PlayerSprite.png";
+        private const string MotherSpritePath = "Assets/Sprites/mum.png";
+        private const string FriendSpritePath = "Assets/Sprites/frendA.png";
+        private const string EveningChimePath = "Assets/Audio/夕焼け小焼け 防災行政無線チャイム 17時.mp3";
 
         [MenuItem("Tools/MemoryRecall/Build Scene")]
         public static void BuildFromMenu()
@@ -49,12 +28,12 @@ namespace MemoryRecall.EditorTools
             try
             {
                 BuildInternal();
-                EditorUtility.DisplayDialog("MemoryRecall", "MemoryRecallRootの構築が完了しました。", "OK");
+                EditorUtility.DisplayDialog("MemoryRecall", "2マップ構成の記憶回想を構築しました。", "OK");
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                Debug.LogError("[MemoryRecallSceneBuilder] 構築に失敗しました: " + e.Message + "\n" + e.StackTrace);
-                EditorUtility.DisplayDialog("MemoryRecall", "構築に失敗しました。コンソールを確認してください。\n" + e.Message, "OK");
+                Debug.LogException(exception);
+                EditorUtility.DisplayDialog("MemoryRecall", "構築に失敗しました。Consoleを確認してください。", "OK");
             }
         }
 
@@ -66,263 +45,222 @@ namespace MemoryRecall.EditorTools
                 Debug.Log("MEMORYRECALL_BUILD_RESULT: SUCCESS");
                 EditorApplication.Exit(0);
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                Debug.LogError("MEMORYRECALL_BUILD_RESULT: FAIL: " + e.Message + "\n" + e.StackTrace);
+                Debug.LogError("MEMORYRECALL_BUILD_RESULT: FAIL: " + exception);
                 EditorApplication.Exit(1);
             }
         }
 
         private static void BuildInternal()
         {
-            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            SadnessMapEnvironment environment = SadnessMapEditorUtility.EnsureEnvironment(scene);
 
-            var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
-            if (font == null)
+            TMP_FontAsset font = RequireAsset<TMP_FontAsset>(FontPath);
+            Sprite playerSprite = AssetDatabase.LoadAssetAtPath<Sprite>(PlayerSpritePath) ??
+                                  RequireAsset<Sprite>(FallbackPlayerSpritePath);
+            Sprite motherSprite = RequireCharacterSprite(MotherSpritePath);
+            Sprite friendSprite = RequireCharacterSprite(FriendSpritePath);
+            AudioClip eveningChime = RequireAsset<AudioClip>(EveningChimePath);
+
+            DestroyRoot(scene, "MemoryRecallRoot");
+            GameObject root = new GameObject("MemoryRecallRoot");
+            SceneManager.MoveGameObjectToScene(root, scene);
+
+            GameObject mother = BuildActor(root.transform, "Mother", motherSprite, environment.homeMotherSpot.position);
+            GameObject[] friends = new GameObject[3];
+            for (int index = 0; index < friends.Length; index++)
             {
-                throw new Exception($"フォントが見つかりません: {FontPath}");
+                friends[index] = BuildActor(
+                    root.transform,
+                    $"Friend{(char)('A' + index)}",
+                    friendSprite,
+                    environment.outdoorFriendSpots[index].position);
             }
 
-            var playerSprite = AssetDatabase.LoadAssetAtPath<Sprite>(PlayerSpritePathInAngerBattle);
-            if (playerSprite == null)
-            {
-                throw new Exception($"プレイヤーの見た目に使う既存スプライトが見つかりません: {PlayerSpritePathInAngerBattle}");
-            }
+            GameObject playerObject = new GameObject("ChildPlayer", typeof(SpriteRenderer), typeof(AngerBattle.PlayerController));
+            playerObject.transform.SetParent(root.transform);
+            playerObject.transform.position = environment.homeStart.position;
+            SpriteRenderer playerRenderer = playerObject.GetComponent<SpriteRenderer>();
+            playerRenderer.sprite = playerSprite;
+            playerRenderer.sortingOrder = 5;
+            AngerBattle.PlayerController player = playerObject.GetComponent<AngerBattle.PlayerController>();
+            player.speed = 5f;
 
-            var motherSprite = LoadCharacterSprite(MotherImagePath);
-            var friendSprite = LoadCharacterSprite(FriendImagePath);
+            BuildDialogueUI(root.transform, font, out TMP_Text nameText, out TMP_Text lineText, out GameObject lineBackground);
 
-            var mapSprite = LoadMapSprite();
+            GameObject controllerObject = new GameObject(
+                "MemoryRecallController",
+                typeof(AudioSource),
+                typeof(MemoryRecallController));
+            controllerObject.transform.SetParent(root.transform);
+            AudioSource audioSource = controllerObject.GetComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.loop = false;
 
-            DestroyIfExists(scene, "MemoryRecallRoot");
-
-            // --- MemoryRecallRoot 階層 ---
-            var root = new GameObject("MemoryRecallRoot");
-
-            // --- 背景（ユーザー作成のドット絵一枚絵。家・川・橋・草地はすべてこの絵に描かれている） ---
-            var mapGO = new GameObject("MapBackground", typeof(SpriteRenderer));
-            mapGO.transform.SetParent(root.transform);
-            mapGO.transform.position = new Vector3(0f, 0f, 1f);
-            var mapRenderer = mapGO.GetComponent<SpriteRenderer>();
-            mapRenderer.sprite = mapSprite;
-            mapRenderer.sortingOrder = -10;
-
-            // 以下の座標は、MAP.png（32x32px、ワールド上は-5〜5の10ユニット四方に対応）上で
-            // 家・玄関・川・橋がある場所を目視でおおよそ合わせたもの。要実機調整。
-            var motherGO = new GameObject("Mother", typeof(SpriteRenderer));
-            motherGO.transform.SetParent(root.transform);
-            motherGO.transform.position = new Vector3(-3.1f, 3f, 0f);
-            var motherRenderer = motherGO.GetComponent<SpriteRenderer>();
-            motherRenderer.sprite = motherSprite;
-            motherRenderer.sortingOrder = 1;
-
-            var friendAGO = new GameObject("FriendA", typeof(SpriteRenderer));
-            friendAGO.transform.SetParent(root.transform);
-            friendAGO.transform.position = new Vector3(-3.8f, 1.3f, 0f);
-            friendAGO.GetComponent<SpriteRenderer>().sprite = friendSprite;
-
-            var friendBGO = new GameObject("FriendB", typeof(SpriteRenderer));
-            friendBGO.transform.SetParent(root.transform);
-            friendBGO.transform.position = new Vector3(1.4f, -1.4f, 0f);
-            friendBGO.GetComponent<SpriteRenderer>().sprite = friendSprite;
-
-            var friendCGO = new GameObject("FriendC", typeof(SpriteRenderer));
-            friendCGO.transform.SetParent(root.transform);
-            friendCGO.transform.position = new Vector3(3.8f, -2.8f, 0f);
-            friendCGO.GetComponent<SpriteRenderer>().sprite = friendSprite;
-
-            var playerGO = new GameObject("Player", typeof(SpriteRenderer), typeof(AngerBattle.PlayerController));
-            playerGO.transform.SetParent(root.transform);
-            playerGO.transform.position = new Vector3(-3.1f, 2.3f, 0f);
-            playerGO.GetComponent<SpriteRenderer>().sprite = playerSprite;
-            playerGO.GetComponent<SpriteRenderer>().sortingOrder = 1;
-            var playerController = playerGO.GetComponent<AngerBattle.PlayerController>();
-            // マップ画像の範囲（-5〜5）から少し内側に収まるよう移動可能範囲を制限する
-            playerController.minBounds = new Vector2(-4.7f, -4.7f);
-            playerController.maxBounds = new Vector2(4.7f, 4.7f);
-
-            // --- セリフ表示UI（現実パートと同じ見た目：背景パネル＋話者名＋本文） ---
-            var mapUIGO = new GameObject("MapUI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
-            mapUIGO.transform.SetParent(root.transform, false);
-            var canvas = mapUIGO.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            var scaler = mapUIGO.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
-
-            var lineBackgroundGO = new GameObject("LineBackground", typeof(RectTransform), typeof(Image));
-            lineBackgroundGO.transform.SetParent(mapUIGO.transform, false);
-            var lineBackgroundRect = lineBackgroundGO.GetComponent<RectTransform>();
-            lineBackgroundRect.anchorMin = new Vector2(0f, 0f);
-            lineBackgroundRect.anchorMax = new Vector2(1f, 0f);
-            lineBackgroundRect.pivot = new Vector2(0.5f, 0f);
-            lineBackgroundRect.anchoredPosition = new Vector2(0f, 80f);
-            lineBackgroundRect.sizeDelta = new Vector2(-400f, 140f);
-            var lineBackgroundImage = lineBackgroundGO.GetComponent<Image>();
-            lineBackgroundImage.color = new Color(0f, 0f, 0f, 0.8352941f);
-            lineBackgroundImage.raycastTarget = false;
-            lineBackgroundGO.SetActive(false);
-
-            var lineTextGO = new GameObject("LineText", typeof(RectTransform), typeof(TextMeshProUGUI));
-            lineTextGO.transform.SetParent(mapUIGO.transform, false);
-            var lineTextRect = lineTextGO.GetComponent<RectTransform>();
-            lineTextRect.anchorMin = new Vector2(0f, 0f);
-            lineTextRect.anchorMax = new Vector2(1f, 0f);
-            lineTextRect.pivot = new Vector2(0.5f, 0f);
-            lineTextRect.anchoredPosition = new Vector2(0f, 80f);
-            lineTextRect.sizeDelta = new Vector2(-400f, 96f);
-            var lineText = lineTextGO.GetComponent<TextMeshProUGUI>();
-            lineText.font = font;
-            lineText.fontSize = 40;
-            lineText.fontStyle = FontStyles.Bold;
-            lineText.alignment = TextAlignmentOptions.TopLeft;
-            lineText.color = Color.white;
-            lineText.raycastTarget = false;
-            lineTextGO.SetActive(false);
-
-            var nameGO = new GameObject("CharacterNameText", typeof(RectTransform), typeof(TextMeshProUGUI));
-            nameGO.transform.SetParent(mapUIGO.transform, false);
-            var nameRect = nameGO.GetComponent<RectTransform>();
-            nameRect.anchorMin = new Vector2(0f, 0f);
-            nameRect.anchorMax = new Vector2(1f, 0f);
-            nameRect.pivot = new Vector2(0.5f, 0f);
-            nameRect.anchoredPosition = new Vector2(0f, 176f);
-            nameRect.sizeDelta = new Vector2(-400f, 44f);
-            var nameText = nameGO.GetComponent<TextMeshProUGUI>();
-            nameText.font = font;
-            nameText.fontSize = 32;
-            nameText.fontStyle = FontStyles.Bold;
-            nameText.alignment = TextAlignmentOptions.TopLeft;
-            nameText.color = Color.white;
-            nameText.raycastTarget = false;
-            nameGO.SetActive(false);
-
-            // --- 進行管理コントローラー ---
-            var controllerGO = new GameObject("MemoryRecallController", typeof(MemoryRecallController));
-            controllerGO.transform.SetParent(root.transform);
-            var controller = controllerGO.GetComponent<MemoryRecallController>();
-            controller.player = playerController;
-            controller.motherTransform = motherGO.transform;
-            controller.friends[0].npcTransform = friendAGO.transform;
-            controller.friends[1].npcTransform = friendBGO.transform;
-            controller.friends[2].npcTransform = friendCGO.transform;
+            MemoryRecallController controller = controllerObject.GetComponent<MemoryRecallController>();
+            controller.player = player;
+            controller.mapEnvironment = environment;
+            controller.motherTransform = mother.transform;
             controller.lineText = lineText;
             controller.characterNameText = nameText;
-            controller.lineBackground = lineBackgroundGO;
+            controller.lineBackground = lineBackground;
+            controller.eveningChimeSource = audioSource;
+            controller.eveningChimeClip = eveningChime;
+            controller.friends[0].npcTransform = friends[0].transform;
+            controller.friends[1].npcTransform = friends[1].transform;
+            controller.friends[2].npcTransform = friends[2].transform;
 
             root.SetActive(false);
+            environment.outdoorGrid.SetActive(false);
+            environment.homeGrid.SetActive(false);
 
-            // --- 既存のMinigameLauncherに参照を追記する（新規作成はしない） ---
-            var launcherGO = GameObject.Find("MinigameLauncher");
-            if (launcherGO == null)
-            {
-                throw new Exception("シーン内に既存の'MinigameLauncher'が見つかりません。先にAngerBattle/FuanBattleのセットアップが必要です。");
-            }
-            var launcher = launcherGO.GetComponent<AngerBattle.MinigameLauncher>();
+            AngerBattle.MinigameLauncher launcher = FindLauncher();
             launcher.memoryRecallRoot = root;
             launcher.memoryRecallController = controller;
+            launcher.sadnessMapEnvironment = environment;
+            launcher.debugStoryNodes = AppendUnique(launcher.debugStoryNodes, "Sadness");
+            launcher.debugMinigames = AppendUnique(launcher.debugMinigames, "MemoryRecall");
 
-            bool alreadyListed = false;
-            foreach (var name in launcher.debugMinigames)
-            {
-                if (name == "MemoryRecall") { alreadyListed = true; break; }
-            }
-            if (!alreadyListed)
-            {
-                var list = new List<string>(launcher.debugMinigames) { "MemoryRecall" };
-                launcher.debugMinigames = list.ToArray();
-            }
-
-            ValidateController(controller);
-
+            Validate(controller);
             EditorSceneManager.MarkSceneDirty(scene);
-            bool saved = EditorSceneManager.SaveScene(scene);
-            if (!saved)
+            if (!EditorSceneManager.SaveScene(scene))
             {
                 throw new Exception("シーンの保存に失敗しました: " + ScenePath);
             }
-
             AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
         }
 
-        private static void ValidateController(MemoryRecallController c)
+        private static GameObject BuildActor(Transform parent, string name, Sprite sprite, Vector3 position)
         {
-            var missing = new List<string>();
-            if (c.player == null) missing.Add("player");
-            if (c.motherTransform == null) missing.Add("motherTransform");
-            if (c.lineText == null) missing.Add("lineText");
-            if (c.lineBackground == null) missing.Add("lineBackground");
-            foreach (var friend in c.friends)
-            {
-                if (friend.npcTransform == null) missing.Add("friends[].npcTransform");
-            }
-            if (missing.Count > 0)
-            {
-                throw new Exception("MemoryRecallControllerの参照が未設定です: " + string.Join(", ", missing));
-            }
+            GameObject actor = new GameObject(name, typeof(SpriteRenderer));
+            actor.transform.SetParent(parent);
+            actor.transform.position = position;
+            SpriteRenderer renderer = actor.GetComponent<SpriteRenderer>();
+            renderer.sprite = sprite;
+            renderer.sortingOrder = 4;
+            return actor;
         }
 
-        /// <summary>
-        /// ユーザーが用意したドット絵背景（MAP.png）を読み込み、ドット絵らしくクッキリ表示されるよう
-        /// インポート設定（Point Filter・Pixels Per Unit）を調整する。
-        /// </summary>
-        private static Sprite LoadMapSprite()
+        private static void BuildDialogueUI(
+            Transform parent,
+            TMP_FontAsset font,
+            out TMP_Text nameText,
+            out TMP_Text lineText,
+            out GameObject lineBackground)
         {
-            if (!File.Exists(MapImagePath))
-            {
-                throw new Exception($"マップ画像が見つかりません: {MapImagePath}");
-            }
+            GameObject canvasObject = new GameObject("MapUI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+            canvasObject.transform.SetParent(parent, false);
+            Canvas canvas = canvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.matchWidthOrHeight = 0.5f;
 
-            var importer = (TextureImporter)AssetImporter.GetAtPath(MapImagePath);
+            lineBackground = new GameObject("LineBackground", typeof(RectTransform), typeof(Image));
+            lineBackground.transform.SetParent(canvasObject.transform, false);
+            RectTransform backgroundRect = lineBackground.GetComponent<RectTransform>();
+            ConfigureBottomRect(backgroundRect, 80f, 140f);
+            lineBackground.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.84f);
+            lineBackground.GetComponent<Image>().raycastTarget = false;
+
+            TextMeshProUGUI body = BuildText(canvasObject.transform, "LineText", font, 40f, 80f, 96f);
+            TextMeshProUGUI speaker = BuildText(canvasObject.transform, "CharacterNameText", font, 32f, 176f, 44f);
+            lineText = body;
+            nameText = speaker;
+            lineBackground.SetActive(false);
+            body.gameObject.SetActive(false);
+            speaker.gameObject.SetActive(false);
+        }
+
+        private static TextMeshProUGUI BuildText(
+            Transform parent,
+            string name,
+            TMP_FontAsset font,
+            float fontSize,
+            float y,
+            float height)
+        {
+            GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
+            textObject.transform.SetParent(parent, false);
+            ConfigureBottomRect(textObject.GetComponent<RectTransform>(), y, height);
+            TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+            text.font = font;
+            text.fontSize = fontSize;
+            text.fontStyle = FontStyles.Bold;
+            text.alignment = TextAlignmentOptions.TopLeft;
+            text.color = Color.white;
+            text.raycastTarget = false;
+            return text;
+        }
+
+        private static void ConfigureBottomRect(RectTransform rect, float y, float height)
+        {
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(1f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = new Vector2(0f, y);
+            rect.sizeDelta = new Vector2(-400f, height);
+        }
+
+        private static Sprite RequireCharacterSprite(string path)
+        {
+            TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null) throw new Exception("画像が見つかりません: " + path);
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
-            importer.spritePixelsPerUnit = MapPixelsPerUnit;
+            importer.spritePixelsPerUnit = 16f;
             importer.filterMode = FilterMode.Point;
-            importer.mipmapEnabled = false;
-            importer.alphaIsTransparency = true;
-            importer.wrapMode = TextureWrapMode.Clamp;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.mipmapEnabled = false;
             importer.SaveAndReimport();
-
-            return AssetDatabase.LoadAssetAtPath<Sprite>(MapImagePath);
+            return RequireAsset<Sprite>(path);
         }
 
-        /// <summary>ユーザーが用意したキャラクターのドット絵（mum.png/frendA.pngなど）を、マップと同じ方針で読み込む。</summary>
-        private static Sprite LoadCharacterSprite(string path)
+        private static T RequireAsset<T>(string path) where T : UnityEngine.Object
         {
-            if (!File.Exists(path))
+            T asset = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (asset == null) throw new Exception("アセットが見つかりません: " + path);
+            return asset;
+        }
+
+        private static AngerBattle.MinigameLauncher FindLauncher()
+        {
+            AngerBattle.MinigameLauncher launcher = UnityEngine.Object.FindFirstObjectByType<AngerBattle.MinigameLauncher>();
+            if (launcher == null) throw new Exception("MinigameLauncherが見つかりません。");
+            return launcher;
+        }
+
+        private static string[] AppendUnique(string[] values, string value)
+        {
+            var list = new List<string>(values ?? Array.Empty<string>());
+            if (!list.Contains(value)) list.Add(value);
+            return list.ToArray();
+        }
+
+        private static void Validate(MemoryRecallController controller)
+        {
+            if (controller.player == null || controller.mapEnvironment == null ||
+                controller.motherTransform == null || controller.lineText == null ||
+                controller.eveningChimeClip == null)
             {
-                throw new Exception($"キャラクター画像が見つかりません: {path}");
+                throw new Exception("MemoryRecallControllerの必須参照が不足しています。");
             }
-
-            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
-            importer.textureType = TextureImporterType.Sprite;
-            importer.spriteImportMode = SpriteImportMode.Single;
-            importer.spritePixelsPerUnit = CharacterPixelsPerUnit;
-            importer.filterMode = FilterMode.Point;
-            importer.mipmapEnabled = false;
-            importer.alphaIsTransparency = true;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.SaveAndReimport();
-
-            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
-        }
-
-        private static void DestroyIfExists(UnityEngine.SceneManagement.Scene scene, string name)
-        {
-            var roots = scene.GetRootGameObjects();
-            for (int i = roots.Length - 1; i >= 0; i--)
+            foreach (MapCharacter friend in controller.friends)
             {
-                if (roots[i].name == name)
-                {
-                    UnityEngine.Object.DestroyImmediate(roots[i]);
-                }
+                if (friend.npcTransform == null) throw new Exception("友達の参照が不足しています。");
             }
         }
 
+        private static void DestroyRoot(Scene scene, string name)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.name == name) UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
     }
 }

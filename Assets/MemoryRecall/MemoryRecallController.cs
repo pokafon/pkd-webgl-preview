@@ -5,54 +5,43 @@ using UnityEngine;
 
 namespace MemoryRecall
 {
-    /// <summary>
-    /// 話しかける対象1人分（友達など）。位置とセリフを持ち、一度話しかけたらhasTalkedがtrueになる。
-    /// </summary>
     [Serializable]
     public class MapCharacter
     {
-        [Tooltip("この対象の位置（インタラクション距離判定に使う）")]
         public Transform npcTransform;
-        [Tooltip("話しかけたときに表示するセリフ（「話者: 本文」の形式）")]
-        [TextArea]
-        public string line;
-        [HideInInspector]
-        public bool hasTalked;
+        [TextArea] public string line;
+        [HideInInspector] public bool hasTalked;
     }
 
     /// <summary>
-    /// 「記憶回想」（子供のころの記憶を想起するシーン）の進行を管理するコントローラー。
-    ///
-    /// 【全体の流れ】
-    /// 0. 開始演出：お母さんの一言（motherOpeningLine）を表示し、スペースキー待ち
-    /// 1. プレイヤー操作を解禁。主人公は2Dマップ上を自由に移動できる
-    /// 2. 友達3人に、それぞれ近づいてスペースキーで話しかけるとセリフが表示される（何度でも近づけるが、
-    ///    一度聞いたセリフは記録される。順番は自由）
-    /// 3. 友達3人全員に話しかけた後、お母さんに近づいてスペースキーで話しかけると、
-    ///    「カラスが鳴いたら帰りましょう」（ナレーション、話者名なし）→お母さんの最後のセリフ、の順に表示され、
-    ///    シーン終了（現実に戻る）
-    ///
-    /// セリフ表示は現実パートと同じ見た目（背景パネル＋話者名＋本文）を流用する。
-    /// 話しかけ判定はCollider2D等は使わず、プレイヤーとの距離（interactRange）で簡易判定する。
+    /// 悲しみ編の幼少期の記憶回想。
+    /// 家の中で母の言葉を聞く→外へ出る→友達3人と話す→夕方の曲→帰宅→母の言葉、
+    /// という2マップ探索を管理する。
     /// </summary>
     public class MemoryRecallController : MonoBehaviour
     {
+        private enum RecallPhase
+        {
+            Intro,
+            LeavingHome,
+            VisitingFriends,
+            ReturningHome,
+            FinalHome,
+            Finished
+        }
+
         [Header("参照")]
         public AngerBattle.PlayerController player;
+        public SadnessMapEnvironment mapEnvironment;
 
         [Header("お母さん")]
-        [Tooltip("お母さんの位置")]
         public Transform motherTransform;
-        [Tooltip("シーン開始時、自動で表示されるお母さんの一言")]
         [TextArea]
         public string motherOpeningLine = "お母さん: おはよう。お昼寝たくさんした？ご飯まだだから、お外で友達と遊んできな。";
-        [Tooltip("友達3人全員に話しかけた後、お母さんに話しかけると流れるナレーション（話者名なし）")]
-        public string crowLine = "カラスが鳴いたら帰りましょう";
-        [Tooltip("ナレーションの後に表示するお母さんの最後のセリフ。これが終わるとシーン終了（現実に戻る）")]
         [TextArea]
         public string motherFinalLine = "お母さん: おかえり。ご飯できたから、手洗ってきなぁ。";
 
-        [Header("友達（3人、順不同で話しかけられる）")]
+        [Header("友達（3人、順不同）")]
         public MapCharacter[] friends = new MapCharacter[]
         {
             new MapCharacter { line = "友達: おさかなさんいっぱいいるよ" },
@@ -61,109 +50,148 @@ namespace MemoryRecall
         };
 
         [Header("インタラクション")]
-        [Tooltip("この距離以内にいる対象に、スペースキーで話しかけられる")]
         public float interactRange = 1.5f;
 
-        [Header("セリフ表示（現実パートと同じ見た目）")]
-        [Tooltip("セリフ本文を表示するTMP_Text")]
+        [Header("夕方の曲")]
+        public AudioSource eveningChimeSource;
+        public AudioClip eveningChimeClip;
+
+        [Header("セリフ表示")]
         public TMP_Text lineText;
-        [Tooltip("話者名を表示するTMP_Text")]
         public TMP_Text characterNameText;
-        [Tooltip("lineTextの背景パネル")]
         public GameObject lineBackground;
 
+        private RecallPhase phase;
         private bool isBusy;
-        private bool endingTriggered;
+        private bool homeUnlocked;
         private Action onFinished;
 
-        /// <summary>外部（MinigameLauncherなど）から呼び出してシーンを開始する。finishedCallbackはシーン終了時（現実に戻るとき）に呼ばれる。</summary>
         public void StartExploration(Action finishedCallback)
         {
+            StopAllCoroutines();
             onFinished = finishedCallback;
-            endingTriggered = false;
+            phase = RecallPhase.Intro;
             isBusy = false;
+            homeUnlocked = false;
 
-            foreach (var friend in friends)
+            foreach (MapCharacter friend in friends)
             {
                 friend.hasTalked = false;
+                if (friend.npcTransform != null)
+                {
+                    friend.npcTransform.gameObject.SetActive(true);
+                }
+            }
+
+            if (motherTransform != null)
+            {
+                motherTransform.gameObject.SetActive(true);
             }
 
             if (player != null)
             {
                 player.enabled = false;
             }
-            HideLine();
 
+            HideLine();
+            mapEnvironment.ShowHome(player, true);
             StartCoroutine(RunIntro());
         }
 
         private IEnumerator RunIntro()
         {
             isBusy = true;
-            yield return StartCoroutine(ShowLineAndWaitForSpace(motherOpeningLine));
+            yield return ShowLineAndWaitForSpace(motherOpeningLine);
             isBusy = false;
-
-            if (player != null)
-            {
-                player.enabled = true;
-            }
+            phase = RecallPhase.LeavingHome;
+            if (player != null) player.enabled = true;
         }
 
         private void Update()
         {
-            if (isBusy || endingTriggered) return;
-            if (!Input.GetKeyDown(KeyCode.Space)) return;
-
-            MapCharacter nearestFriend = FindNearestUntalkedFriend();
-            if (nearestFriend != null)
+            if (isBusy || phase == RecallPhase.Finished || player == null)
             {
-                StartCoroutine(RunFriendLine(nearestFriend));
                 return;
             }
 
-            if (AllFriendsTalked() && IsPlayerNear(motherTransform))
+            if (!Input.GetKeyDown(KeyCode.Space))
             {
-                StartCoroutine(RunEnding());
+                return;
+            }
+
+            switch (phase)
+            {
+                case RecallPhase.LeavingHome:
+                    if (IsPlayerNear(mapEnvironment.homeDoor))
+                    {
+                        mapEnvironment.ShowOutdoor(player, true);
+                        phase = RecallPhase.VisitingFriends;
+                    }
+                    break;
+
+                case RecallPhase.VisitingFriends:
+                    MapCharacter nearestFriend = FindNearestUntalkedFriend();
+                    if (nearestFriend != null)
+                    {
+                        StartCoroutine(RunFriendLine(nearestFriend));
+                    }
+                    break;
+
+                case RecallPhase.ReturningHome:
+                    if (homeUnlocked && IsPlayerNear(mapEnvironment.outdoorDoor))
+                    {
+                        mapEnvironment.ShowHome(player, true);
+                        phase = RecallPhase.FinalHome;
+                    }
+                    break;
+
+                case RecallPhase.FinalHome:
+                    if (IsPlayerNear(motherTransform))
+                    {
+                        StartCoroutine(RunEnding());
+                    }
+                    break;
             }
         }
 
         private IEnumerator RunFriendLine(MapCharacter friend)
         {
             isBusy = true;
-            if (player != null)
-            {
-                player.enabled = false;
-            }
+            if (player != null) player.enabled = false;
 
-            yield return StartCoroutine(ShowLineAndWaitForSpace(friend.line));
+            yield return ShowLineAndWaitForSpace(friend.line);
             friend.hasTalked = true;
 
-            if (player != null)
+            if (AllFriendsTalked())
             {
-                player.enabled = true;
+                homeUnlocked = true;
+                phase = RecallPhase.ReturningHome;
+                if (eveningChimeSource != null && eveningChimeClip != null)
+                {
+                    eveningChimeSource.PlayOneShot(eveningChimeClip);
+                }
             }
+
+            if (player != null) player.enabled = true;
             isBusy = false;
         }
 
         private IEnumerator RunEnding()
         {
-            endingTriggered = true;
             isBusy = true;
-            if (player != null)
-            {
-                player.enabled = false;
-            }
+            phase = RecallPhase.Finished;
+            if (player != null) player.enabled = false;
 
-            yield return StartCoroutine(ShowLineAndWaitForSpace(crowLine));
-            yield return StartCoroutine(ShowLineAndWaitForSpace(motherFinalLine));
+            yield return ShowLineAndWaitForSpace(motherFinalLine);
 
             HideLine();
+            mapEnvironment.HideMaps();
             onFinished?.Invoke();
         }
 
         private bool AllFriendsTalked()
         {
-            foreach (var friend in friends)
+            foreach (MapCharacter friend in friends)
             {
                 if (!friend.hasTalked) return false;
             }
@@ -173,52 +201,43 @@ namespace MemoryRecall
         private MapCharacter FindNearestUntalkedFriend()
         {
             MapCharacter nearest = null;
-            float nearestDist = float.MaxValue;
-            foreach (var friend in friends)
+            float nearestDistance = float.MaxValue;
+
+            foreach (MapCharacter friend in friends)
             {
                 if (friend.hasTalked || friend.npcTransform == null) continue;
-                float dist = Vector2.Distance(player.transform.position, friend.npcTransform.position);
-                if (dist <= interactRange && dist < nearestDist)
+                float distance = Vector2.Distance(player.transform.position, friend.npcTransform.position);
+                if (distance <= interactRange && distance < nearestDistance)
                 {
                     nearest = friend;
-                    nearestDist = dist;
+                    nearestDistance = distance;
                 }
             }
+
             return nearest;
         }
 
         private bool IsPlayerNear(Transform target)
         {
-            if (target == null || player == null) return false;
-            return Vector2.Distance(player.transform.position, target.position) <= interactRange;
+            return target != null && mapEnvironment != null &&
+                   Vector2.Distance(player.transform.position, target.position) <= interactRange;
         }
 
-        /// <summary>指定したセリフを表示し、スペースキーが押されるまで待ってから隠す。</summary>
         private IEnumerator ShowLineAndWaitForSpace(string text)
         {
             ShowLine(text);
-
-            // 直前の操作を誤って拾わないよう、1フレーム待ってから入力受付を始める
             yield return null;
-
             while (!Input.GetKeyDown(KeyCode.Space))
             {
                 yield return null;
             }
-
             HideLine();
         }
 
-        /// <summary>
-        /// セリフを現実パートと同じ見た目（背景パネル＋話者名＋本文）で表示する。
-        /// text は「話者名: 本文」の形式を想定し、最初の「: 」で話者名と本文に分割する。
-        /// 「: 」を含まない場合は話者名なし（ナレーション）として扱う。
-        /// </summary>
         private void ShowLine(string text)
         {
             string speaker = null;
             string body = text;
-
             int separatorIndex = text.IndexOf(": ", StringComparison.Ordinal);
             if (separatorIndex >= 0)
             {
@@ -228,42 +247,22 @@ namespace MemoryRecall
 
             if (characterNameText != null)
             {
-                if (!string.IsNullOrEmpty(speaker))
-                {
-                    characterNameText.text = speaker;
-                    characterNameText.gameObject.SetActive(true);
-                }
-                else
-                {
-                    characterNameText.gameObject.SetActive(false);
-                }
+                characterNameText.text = speaker ?? string.Empty;
+                characterNameText.gameObject.SetActive(!string.IsNullOrEmpty(speaker));
             }
-
             if (lineText != null)
             {
                 lineText.text = body;
                 lineText.gameObject.SetActive(true);
             }
-            if (lineBackground != null)
-            {
-                lineBackground.SetActive(true);
-            }
+            if (lineBackground != null) lineBackground.SetActive(true);
         }
 
         private void HideLine()
         {
-            if (lineText != null)
-            {
-                lineText.gameObject.SetActive(false);
-            }
-            if (characterNameText != null)
-            {
-                characterNameText.gameObject.SetActive(false);
-            }
-            if (lineBackground != null)
-            {
-                lineBackground.SetActive(false);
-            }
+            if (lineText != null) lineText.gameObject.SetActive(false);
+            if (characterNameText != null) characterNameText.gameObject.SetActive(false);
+            if (lineBackground != null) lineBackground.SetActive(false);
         }
     }
 }
