@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using MemoryRecall;
 using SadnessBattle;
 using TMPro;
@@ -17,13 +18,15 @@ namespace SadnessBattle.EditorTools
     {
         private const string ScenePath = "Assets/Scenes/SampleScene.unity";
         private const string FontPath = "Assets/Fonts/NotoSansJP SDF.asset";
-        private const string ContactSpritePath = "Assets/AngerBattle/Sprites/PlayerSprite.png";
-        private const string MotherSpritePath = "Assets/Sprites/mum.png";
-        private const string FriendSpritePath = "Assets/Sprites/frendA.png";
+        private const string ContactSpritePath = "Assets/Resources/AngerBattle/ContackVertical.png";
+        private const string MotherSpritePath = "Assets/Sprites/Tiles/pixelworld_complete_v.1.8/Characters/FemaleCharacter/PNGs/F_idle_left-Sheet.png";
+        private const string MotherSpriteName = "F_idle_left-Sheet_3";
         private const string BulletPrefabPath = "Assets/AngerBattle/Prefabs/DenialBulletPrefab.prefab";
         private const string EveningChimePath = "Assets/Audio/夕焼け小焼け 防災行政無線チャイム 17時.mp3";
         private const string GeneratedSpritesDirectory = "Assets/SadnessBattle/Sprites";
         private const string SadnessPlaceholderPath = GeneratedSpritesDirectory + "/SadnessPlaceholder.png";
+        private static readonly string[] MemoryFriendNames = { "MemoryFriendA", "MemoryFriendB", "MemoryFriendC" };
+        private static readonly string[] LegacyPlacedFriendNames = { "Player_2", "Player_Actions_4", "Player_9" };
 
         [MenuItem("Tools/SadnessBattle/Build Scene")]
         public static void BuildFromMenu()
@@ -63,17 +66,18 @@ namespace SadnessBattle.EditorTools
 
             TMP_FontAsset font = RequireAsset<TMP_FontAsset>(FontPath);
             Sprite contactSprite = RequireAsset<Sprite>(ContactSpritePath);
-            Sprite motherSprite = RequireCharacterSprite(MotherSpritePath);
-            Sprite friendSprite = RequireCharacterSprite(FriendSpritePath);
+            Sprite motherSprite = RequireSpriteSubAsset(MotherSpritePath, MotherSpriteName);
+            Sprite[] friendSprites = FindCurrentFriendSprites(scene);
             GameObject bulletPrefab = RequireAsset<GameObject>(BulletPrefabPath);
             AudioClip eveningChime = RequireAsset<AudioClip>(EveningChimePath);
             Sprite sadnessSprite = CreateSadnessPlaceholder();
 
-            DestroyRoot(scene, "SadnessBattleRoot");
+            SceneHierarchyUtility.DestroyNamedObject(scene, "SadnessBattleRoot");
             GameObject root = new GameObject("SadnessBattleRoot");
             SceneManager.MoveGameObjectToScene(root, scene);
+            SceneHierarchyUtility.MoveUnderGroup(scene, root, SceneHierarchyUtility.MinigamesGroupName);
 
-            GameObject playerObject = new GameObject("ContactPlayer", typeof(SpriteRenderer), typeof(AngerBattle.PlayerController));
+            GameObject playerObject = new GameObject("ContackPlayer", typeof(SpriteRenderer), typeof(AngerBattle.PlayerController));
             playerObject.transform.SetParent(root.transform);
             playerObject.transform.position = environment.outdoorStart.position;
             SpriteRenderer playerRenderer = playerObject.GetComponent<SpriteRenderer>();
@@ -93,20 +97,20 @@ namespace SadnessBattle.EditorTools
             {
                 AngerBattle.EnemyAnger enemy = BuildTarget(
                     root.transform,
-                    $"TargetFriend{(char)('A' + index)}",
-                    friendSprite,
+                    $"FriendTarget{(char)('A' + index)}",
+                    friendSprites[index],
                     environment.outdoorFriendSpots[index].position);
                 friends[index] = new SadnessTarget { line = lines[index], enemy = enemy };
             }
 
             AngerBattle.EnemyAnger motherEnemy = BuildTarget(
                 root.transform,
-                "TargetMother",
+                "MotherTarget",
                 motherSprite,
                 environment.homeMotherSpot.position);
             SadnessTarget mother = new SadnessTarget { line = "お母さん: おかえり。", enemy = motherEnemy };
 
-            GameObject sadnessActor = new GameObject("Sadness", typeof(SpriteRenderer));
+            GameObject sadnessActor = new GameObject("SadnessActor", typeof(SpriteRenderer));
             sadnessActor.transform.SetParent(root.transform);
             sadnessActor.transform.position = environment.homeMotherSpot.position + new Vector3(1.4f, 0f, 0f);
             sadnessActor.transform.localScale = new Vector3(1.4f, 1.4f, 1f);
@@ -187,6 +191,28 @@ namespace SadnessBattle.EditorTools
             return enemy;
         }
 
+        private static Sprite[] FindCurrentFriendSprites(Scene scene)
+        {
+            Transform[] transforms = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<Transform>(true))
+                .ToArray();
+            var sprites = new Sprite[MemoryFriendNames.Length];
+
+            for (int index = 0; index < sprites.Length; index++)
+            {
+                Transform actor = transforms.FirstOrDefault(item => item.name == MemoryFriendNames[index]) ??
+                                  transforms.FirstOrDefault(item => item.name == LegacyPlacedFriendNames[index]);
+                SpriteRenderer renderer = actor != null ? actor.GetComponent<SpriteRenderer>() : null;
+                if (renderer == null || renderer.sprite == null)
+                {
+                    throw new Exception($"最新の友達{index + 1}のSpriteRendererが見つかりません。");
+                }
+                sprites[index] = renderer.sprite;
+            }
+
+            return sprites;
+        }
+
         private static void BuildDialogueUI(
             Transform parent,
             TMP_FontAsset font,
@@ -194,7 +220,7 @@ namespace SadnessBattle.EditorTools
             out TMP_Text lineText,
             out GameObject lineBackground)
         {
-            GameObject canvasObject = new GameObject("BattleUI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+            GameObject canvasObject = new GameObject("DialogueUI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
             canvasObject.transform.SetParent(parent, false);
             Canvas canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -285,18 +311,13 @@ namespace SadnessBattle.EditorTools
             return RequireAsset<Sprite>(SadnessPlaceholderPath);
         }
 
-        private static Sprite RequireCharacterSprite(string path)
+        private static Sprite RequireSpriteSubAsset(string path, string spriteName)
         {
-            TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
-            if (importer == null) throw new Exception("画像が見つかりません: " + path);
-            importer.textureType = TextureImporterType.Sprite;
-            importer.spriteImportMode = SpriteImportMode.Single;
-            importer.spritePixelsPerUnit = 16f;
-            importer.filterMode = FilterMode.Point;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.mipmapEnabled = false;
-            importer.SaveAndReimport();
-            return RequireAsset<Sprite>(path);
+            Sprite sprite = AssetDatabase.LoadAllAssetsAtPath(path)
+                .OfType<Sprite>()
+                .FirstOrDefault(candidate => candidate.name == spriteName);
+            if (sprite == null) throw new Exception($"スプライトが見つかりません: {path} / {spriteName}");
+            return sprite;
         }
 
         private static T RequireAsset<T>(string path) where T : UnityEngine.Object
@@ -331,12 +352,5 @@ namespace SadnessBattle.EditorTools
             }
         }
 
-        private static void DestroyRoot(Scene scene, string name)
-        {
-            foreach (GameObject root in scene.GetRootGameObjects())
-            {
-                if (root.name == name) UnityEngine.Object.DestroyImmediate(root);
-            }
-        }
     }
 }

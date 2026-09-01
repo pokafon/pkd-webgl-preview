@@ -10,7 +10,7 @@ namespace AngerBattle
 {
     /// <summary>
     /// 不安戦のYES / NO体験を描画する専用コンポーネント。
-    /// 回答を評価せず、選択した方向へ伸びる足跡と入口への没入演出を積み上げる。
+    /// 仮の正解順から外れたら1問目へ戻し、通った直線経路の足跡を道標として残す。
     /// </summary>
     public sealed class AnxietyQuestionExperience : MonoBehaviour
     {
@@ -21,6 +21,7 @@ namespace AngerBattle
         private readonly List<Vector2> footstepPathCenters = new List<Vector2>();
         private readonly List<float> footstepPathAngles = new List<float>();
         private readonly List<int> footstepPathSegments = new List<int>();
+        private readonly HashSet<string> visitedFootstepRoutes = new HashSet<string>();
 
         private Canvas hostCanvas;
         private TMP_FontAsset font;
@@ -135,7 +136,27 @@ namespace AngerBattle
             EnsureUI();
         }
 
-        public IEnumerator Play(string[] questions, string[] intrusiveLines)
+        public void PrepareChaseOpening(
+            Sprite anxietySprite,
+            Sprite contackSprite,
+            FuanBattleController.OpeningLayoutSettings layout)
+        {
+            EnsureUI();
+            if (useWorldArt)
+            {
+                worldVisuals.ShowChaseOpening(anxietySprite, contackSprite, layout);
+            }
+        }
+
+        public IEnumerator PlayChaseIntro(float exitDuration, float holdDuration, float scrollDuration)
+        {
+            if (useWorldArt)
+            {
+                yield return worldVisuals.PlayChaseIntro(exitDuration, holdDuration, scrollDuration);
+            }
+        }
+
+        public IEnumerator Play(string[] questions, string[] intrusiveLines, string[] correctAnswers)
         {
             EnsureUI();
             answers.Clear();
@@ -148,6 +169,7 @@ namespace AngerBattle
             footstepPathCenters.Clear();
             footstepPathAngles.Clear();
             footstepPathSegments.Clear();
+            visitedFootstepRoutes.Clear();
 
             if (useWorldArt)
             {
@@ -166,14 +188,17 @@ namespace AngerBattle
             footerText.text = "← / Y    YES        NO    N / →";
 
             int questionCount = questions != null ? questions.Length : 0;
-            for (int i = 0; i < questionCount; i++)
+            int i = 0;
+            bool firstPresentation = true;
+            while (i < questionCount)
             {
                 float intensity = questionCount <= 1 ? 1f : (float)i / (questionCount - 1);
                 PrepareQuestion(questions[i], intrusiveLines, i, questionCount, intensity);
 
-                if (i == 0)
+                if (firstPresentation)
                 {
                     yield return Fade(contentGroup, 0f, 1f, 0.35f);
+                    firstPresentation = false;
                 }
                 else if (useWorldArt)
                 {
@@ -191,13 +216,35 @@ namespace AngerBattle
                 }
                 yield return AnimateAnswerCommit(i, intensity);
 
-                // 1〜4問目は、選んだ入口へ入って暗転した先から次の問いを始める。
-                if (useWorldArt && i < questionCount - 1)
+                bool correct = IsCorrectAnswer(pendingAnswer, correctAnswers, i);
+                bool finalQuestion = i == questionCount - 1;
+
+                if (useWorldArt)
                 {
                     yield return Fade(contentGroup, 1f, 0f, 0.16f);
                     yield return DiveToBlack(pendingAnswer);
                     worldVisuals.ResetView();
+
+                    if (!correct)
+                    {
+                        // 選んだ経路の足跡は消さず、暗転先から1問目へ戻る。
+                        i = 0;
+                        continue;
+                    }
+
+                    if (finalQuestion)
+                    {
+                        worldVisuals.PrepareFaceOffBackground();
+                        break;
+                    }
                 }
+
+                if (!correct)
+                {
+                    i = 0;
+                    continue;
+                }
+                i++;
             }
 
             if (!useWorldArt && questionCount > 0)
@@ -234,15 +281,23 @@ namespace AngerBattle
             }
             yield return Fade(contentGroup, 1f, 0f, 0.20f);
 
-            if (useWorldArt && answers.Count > 0)
-            {
-                yield return DiveToBlack(answers[answers.Count - 1]);
-                worldVisuals.Hide();
-            }
-            else
+            if (!useWorldArt)
             {
                 yield return FadeBackground(background.color, DiveBlack, 0.24f);
             }
+        }
+
+        private static bool IsCorrectAnswer(string answer, string[] correctAnswers, int questionIndex)
+        {
+            if (correctAnswers == null || questionIndex < 0 || questionIndex >= correctAnswers.Length
+                || string.IsNullOrWhiteSpace(correctAnswers[questionIndex]))
+            {
+                return true;
+            }
+            return string.Equals(
+                answer,
+                correctAnswers[questionIndex].Trim(),
+                System.StringComparison.OrdinalIgnoreCase);
         }
 
         private IEnumerator DiveToBlack(string answer)
@@ -460,8 +515,9 @@ namespace AngerBattle
                 return;
             }
 
+            bool hasCurrentQuestionRoute = footstepPathSegments.Contains(currentQuestionIndex);
             float starterPulse = 0.5f + Mathf.Sin(animationClock * 1.8f) * 0.5f;
-            float starterAlpha = footstepPathCenters.Count == 0
+            float starterAlpha = !hasCurrentQuestionRoute
                 ? Mathf.Lerp(0.34f, 0.44f, starterPulse)
                 : 0.16f;
             Color starterColor = new Color(0.56f, 0.67f, 0.78f, starterAlpha);
@@ -482,7 +538,11 @@ namespace AngerBattle
                     continue;
                 }
 
-                bool visible = i < visibleFootstepCount && i < footstepPathCenters.Count;
+                bool belongsToCurrentQuestion = i < footstepPathSegments.Count
+                    && footstepPathSegments[i] == currentQuestionIndex;
+                bool visible = i < visibleFootstepCount
+                    && i < footstepPathCenters.Count
+                    && belongsToCurrentQuestion;
                 footstep.gameObject.SetActive(visible && footstep.sprite != null);
                 if (!visible)
                 {
@@ -496,16 +556,25 @@ namespace AngerBattle
                 Stretch(footRect, center - halfSize, center + halfSize);
                 footRect.localEulerAngles = new Vector3(0f, 0f, footstepPathAngles[i]);
 
-                int latestAnsweredSegment = currentFootstepCommitted
-                    ? currentQuestionIndex
-                    : currentQuestionIndex - 1;
-                int segmentAge = Mathf.Max(0, latestAnsweredSegment - footstepPathSegments[i]);
-                float historyAlpha = segmentAge == 0 ? 0.62f : segmentAge == 1 ? 0.36f : 0.21f;
-                bool newest = i == visibleFootstepCount - 1 && currentFootstepCommitted;
+                float historyAlpha = 0.68f;
+                bool newest = IsLastVisibleFootstepForCurrentQuestion(i) && currentFootstepCommitted;
                 float committedGlow = newest ? footstepCommitPulse : 0f;
                 footstep.color = new Color(0.58f, 0.70f, 0.82f, historyAlpha + committedGlow * 0.22f);
                 footRect.localScale = Vector3.one * (1f + committedGlow * 0.08f);
             }
+        }
+
+        private bool IsLastVisibleFootstepForCurrentQuestion(int index)
+        {
+            int upperBound = Mathf.Min(visibleFootstepCount, footstepPathSegments.Count);
+            for (int i = index + 1; i < upperBound; i++)
+            {
+                if (footstepPathSegments[i] == currentQuestionIndex)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private void AppendFootstepSegment(string answer, int answerIndex)
@@ -515,35 +584,30 @@ namespace AngerBattle
                 return;
             }
 
-            Vector2 start = footstepPathCenters.Count > 0
-                ? footstepPathCenters[footstepPathCenters.Count - 1]
-                : new Vector2(0.5f, 0.082f);
             bool choseYes = string.Equals(answer, "YES", System.StringComparison.Ordinal);
-            float progress = Mathf.Clamp01(answerIndex / 4f);
-            Vector2 target = new Vector2(choseYes ? 0.285f : 0.715f, Mathf.Lerp(0.145f, 0.395f, progress));
+            string routeKey = answerIndex + ":" + (choseYes ? "YES" : "NO");
+            if (!visitedFootstepRoutes.Add(routeKey))
+            {
+                // 再挑戦で同じ側を通る時は、既存の足跡の上を歩く。
+                return;
+            }
 
-            // 回答ごとに一段上へ進むS字軌道にする。横断距離が長くても
-            // 足跡同士が団子にならず、過去の左右への迷いが一本の道として読める。
+            // 各問のYES／NOを別の高さへ置き、中心から選択側へ一直線に進ませる。
+            // 失敗して1問目へ戻っても、それまでの経路が道標として同じ場所に残る。
+            float startY = 0.082f + Mathf.Clamp(answerIndex, 0, 4) * 0.035f;
+            Vector2 start = new Vector2(0.5f, startY);
+            Vector2 target = new Vector2(choseYes ? 0.295f : 0.705f, startY + 0.22f);
             Vector2 delta = target - start;
-            Vector2 weightedDelta = new Vector2(delta.x * 0.62f, delta.y);
-            int stepCount = Mathf.Clamp(Mathf.CeilToInt(weightedDelta.magnitude / 0.082f), 1, 6);
-            Vector2 controlA = start + new Vector2(delta.x * 0.18f, delta.y * 0.58f);
-            Vector2 controlB = target - new Vector2(delta.x * 0.18f, delta.y * 0.42f);
+            const int stepCount = 4;
             Vector2 previous = start;
 
             for (int step = 1; step <= stepCount && footstepPathCenters.Count < MaxTrailFootsteps; step++)
             {
                 float t = step / (float)stepCount;
-                float oneMinusT = 1f - t;
-                Vector2 center =
-                    oneMinusT * oneMinusT * oneMinusT * start
-                    + 3f * oneMinusT * oneMinusT * t * controlA
-                    + 3f * oneMinusT * t * t * controlB
-                    + t * t * t * target;
+                Vector2 center = Vector2.Lerp(start, target, t);
 
                 Vector2 stepDirection = center - previous;
                 float angle = -Mathf.Atan2(stepDirection.x, Mathf.Max(0.001f, stepDirection.y)) * Mathf.Rad2Deg;
-                angle = Mathf.Clamp(angle, -48f, 48f);
                 footstepPathCenters.Add(center);
                 footstepPathAngles.Add(angle);
                 footstepPathSegments.Add(answerIndex);
@@ -1087,6 +1151,10 @@ namespace AngerBattle
         private SpriteRenderer floorRenderer;
         private SpriteRenderer yesGateRenderer;
         private SpriteRenderer noGateRenderer;
+        private SpriteRenderer introFloorSafetyRenderer;
+        private SpriteRenderer introFloorRenderer;
+        private SpriteRenderer anxietyActorRenderer;
+        private SpriteRenderer contackActorRenderer;
         private Material yesGateRuntimeMaterial;
         private Material noGateRuntimeMaterial;
         private TextMeshPro yesLabel;
@@ -1107,6 +1175,7 @@ namespace AngerBattle
         private float activeChoiceTime;
         private string emphasizedAnswer;
         private float emphasisAmount;
+        private FuanBattleController.OpeningLayoutSettings openingLayout;
 
         public bool Configure(
             Camera camera,
@@ -1163,10 +1232,12 @@ namespace AngerBattle
 
             CaptureCameraState();
             LayoutToCamera();
+            SetGateObjectsActive(true);
             yesHovered = false;
             noHovered = false;
             ResetGateState();
             visualRoot.SetActive(true);
+            SetIntroObjectsActive(false);
 
             if (rain != null)
             {
@@ -1221,6 +1292,7 @@ namespace AngerBattle
             RestoreCamera();
             CaptureCameraState();
             LayoutToCamera();
+            SetGateObjectsActive(true);
             ResetGateState();
             if (rainEnabled && rain != null && !rain.isPlaying)
             {
@@ -1230,6 +1302,92 @@ namespace AngerBattle
             {
                 rainShadow.Play(true);
             }
+        }
+
+        public void ShowChaseOpening(
+            Sprite anxietySprite,
+            Sprite contackSprite,
+            FuanBattleController.OpeningLayoutSettings requestedLayout)
+        {
+            if (!ready)
+            {
+                return;
+            }
+
+            Show();
+            openingLayout = requestedLayout ?? new FuanBattleController.OpeningLayoutSettings();
+            anxietyActorRenderer.sprite = anxietySprite;
+            contackActorRenderer.sprite = contackSprite;
+            SetQuestionFloorActive(false);
+            SetGateObjectsActive(false);
+            SetIntroObjectsActive(true);
+            LayoutChase(0f, 0f);
+        }
+
+        public IEnumerator PlayChaseIntro(float exitDuration, float holdDuration, float scrollDuration)
+        {
+            if (!ready || visualRoot == null || !visualRoot.activeSelf)
+            {
+                yield break;
+            }
+
+            // 先に不安だけを画面外へ逃がす。この間、カメラと床は動かさない。
+            float safeExitDuration = Mathf.Max(0.2f, exitDuration);
+            float elapsed = 0f;
+            while (elapsed < safeExitDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float exitProgress = Mathf.SmoothStep(
+                    0f,
+                    1f,
+                    Mathf.Clamp01(elapsed / safeExitDuration));
+                LayoutChase(exitProgress, 0f);
+                yield return null;
+            }
+            LayoutChase(1f, 0f);
+            if (anxietyActorRenderer != null)
+            {
+                anxietyActorRenderer.gameObject.SetActive(false);
+            }
+
+            // 不安が完全に消えた画を一度受け止めてから、上の質問エリアへ移る。
+            float safeHoldDuration = Mathf.Max(0f, holdDuration);
+            if (safeHoldDuration > 0f)
+            {
+                yield return new WaitForSecondsRealtime(safeHoldDuration);
+            }
+
+            SetQuestionFloorActive(true);
+            SetGateObjectsActive(true);
+            float safeScrollDuration = Mathf.Max(0.2f, scrollDuration);
+            elapsed = 0f;
+            while (elapsed < safeScrollDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float scrollProgress = Mathf.SmoothStep(
+                    0f,
+                    1f,
+                    Mathf.Clamp01(elapsed / safeScrollDuration));
+                LayoutChase(1f, scrollProgress);
+                yield return null;
+            }
+            LayoutChase(1f, 1f);
+
+            SetIntroObjectsActive(false);
+            LayoutToCamera();
+        }
+
+        public void PrepareFaceOffBackground()
+        {
+            if (!ready)
+            {
+                return;
+            }
+            visualRoot.SetActive(true);
+            SetIntroObjectsActive(false);
+            LayoutToCamera();
+            SetGateObjectsActive(false);
+            ResetGateState();
         }
 
         public void SetChoiceHover(string answer, bool hovered)
@@ -1389,6 +1547,10 @@ namespace AngerBattle
                 floorRenderer = CreateSpriteRenderer("Floor", visualRoot.transform, 40);
                 yesGateRenderer = CreateSpriteRenderer("YesGate", visualRoot.transform, 41);
                 noGateRenderer = CreateSpriteRenderer("NoGate", visualRoot.transform, 42);
+                introFloorSafetyRenderer = CreateSpriteRenderer("IntroFloorSafety", visualRoot.transform, 37);
+                introFloorRenderer = CreateSpriteRenderer("IntroFloor", visualRoot.transform, 38);
+                anxietyActorRenderer = CreateSpriteRenderer("AnxietyActor", visualRoot.transform, 81);
+                contackActorRenderer = CreateSpriteRenderer("ContackActor", visualRoot.transform, 80);
                 yesLabel = CreateWorldLabel("YES", visualRoot.transform, 70, new Color(0.62f, 0.80f, 1f, 1f));
                 noLabel = CreateWorldLabel("NO", visualRoot.transform, 70, new Color(0.86f, 0.67f, 1f, 1f));
                 yesLabel.gameObject.SetActive(false);
@@ -1402,6 +1564,8 @@ namespace AngerBattle
             floorRenderer.sprite = floorSprite;
             yesGateRenderer.sprite = yesGateSprite;
             noGateRenderer.sprite = noGateSprite;
+            introFloorSafetyRenderer.sprite = floorSprite;
+            introFloorRenderer.sprite = floorSprite;
             ApplyGateMaterial(yesGateRenderer, yesGateSprite, ref yesGateRuntimeMaterial, "Runtime Anxiety YES Gate");
             ApplyGateMaterial(noGateRenderer, noGateSprite, ref noGateRuntimeMaterial, "Runtime Anxiety NO Gate");
             yesLabel.font = font;
@@ -1424,6 +1588,97 @@ namespace AngerBattle
                 rainShadow.gameObject.SetActive(rainEnabled);
             }
             visualRoot.SetActive(false);
+        }
+
+        private void LayoutChase(float anxietyExitProgress, float scrollProgress)
+        {
+            FuanBattleController.OpeningLayoutSettings layout = openingLayout
+                ?? new FuanBattleController.OpeningLayoutSettings();
+            float worldHeight = originalCameraSize * 2f;
+            float worldWidth = worldHeight * questionCamera.aspect;
+            Vector3 cameraCenter = new Vector3(originalCameraPosition.x, originalCameraPosition.y, 0f);
+            float normalizedExit = Mathf.Clamp01(anxietyExitProgress);
+            float normalizedScroll = Mathf.Clamp01(scrollProgress);
+            float scrollScreens = Mathf.Max(0.1f, layout.scrollScreens);
+            float scroll = normalizedScroll * worldHeight * scrollScreens;
+            Vector3 introCenter = cameraCenter - Vector3.up * scroll;
+            Vector3 questionCenter = cameraCenter + Vector3.up * (worldHeight - scroll);
+
+            LayoutSprite(introFloorSafetyRenderer, introCenter, worldWidth, worldHeight, 1.14f);
+            LayoutSprite(introFloorRenderer, introCenter, worldWidth, worldHeight);
+            LayoutSprite(floorSafetyRenderer, questionCenter, worldWidth, worldHeight, 1.14f);
+            LayoutSprite(floorRenderer, questionCenter, worldWidth, worldHeight);
+            LayoutSprite(yesGateRenderer, questionCenter, worldWidth, worldHeight);
+            LayoutSprite(noGateRenderer, questionCenter, worldWidth, worldHeight);
+
+            Vector2 anxietyViewport = Vector2.Lerp(
+                layout.anxietyStartViewport,
+                GetFullyOffscreenAnxietyViewport(layout),
+                Mathf.Pow(normalizedExit, 0.82f));
+            // コンタックは世界上で停止。後半に床がスクロールする分だけ画面下へ抜ける。
+            Vector2 contackViewport = layout.contackStartViewport
+                + Vector2.down * (scrollScreens * normalizedScroll);
+            PlaceActor(
+                anxietyActorRenderer,
+                anxietyViewport,
+                worldHeight * Mathf.Max(0.05f, layout.anxietyScreenHeight));
+            PlaceActor(
+                contackActorRenderer,
+                contackViewport,
+                worldHeight * Mathf.Max(0.05f, layout.contackScreenHeight));
+        }
+
+        private static Vector2 GetFullyOffscreenAnxietyViewport(
+            FuanBattleController.OpeningLayoutSettings layout)
+        {
+            float requiredY = 1f + Mathf.Max(0.05f, layout.anxietyScreenHeight) * 0.5f + 0.04f;
+            return new Vector2(
+                layout.anxietyEndViewport.x,
+                Mathf.Max(layout.anxietyEndViewport.y, requiredY));
+        }
+
+        private void PlaceActor(SpriteRenderer renderer, Vector2 viewportPosition, float targetHeight)
+        {
+            if (renderer == null || renderer.sprite == null)
+            {
+                return;
+            }
+            float distance = Mathf.Abs(questionCamera.transform.position.z);
+            Vector3 position = questionCamera.ViewportToWorldPoint(
+                new Vector3(viewportPosition.x, viewportPosition.y, distance));
+            position.z = 0f;
+            renderer.transform.position = position;
+            float scale = targetHeight / Mathf.Max(0.001f, renderer.sprite.bounds.size.y);
+            renderer.transform.localScale = new Vector3(scale, scale, 1f);
+            renderer.color = Color.white;
+        }
+
+        private void SetIntroObjectsActive(bool active)
+        {
+            if (introFloorSafetyRenderer != null) introFloorSafetyRenderer.gameObject.SetActive(active);
+            if (introFloorRenderer != null) introFloorRenderer.gameObject.SetActive(active);
+            if (anxietyActorRenderer != null)
+            {
+                anxietyActorRenderer.gameObject.SetActive(active && anxietyActorRenderer.sprite != null);
+            }
+            if (contackActorRenderer != null)
+            {
+                contackActorRenderer.gameObject.SetActive(active && contackActorRenderer.sprite != null);
+            }
+        }
+
+        private void SetGateObjectsActive(bool active)
+        {
+            if (yesGateRenderer != null) yesGateRenderer.gameObject.SetActive(active);
+            if (noGateRenderer != null) noGateRenderer.gameObject.SetActive(active);
+            if (yesLabel != null) yesLabel.gameObject.SetActive(false);
+            if (noLabel != null) noLabel.gameObject.SetActive(false);
+        }
+
+        private void SetQuestionFloorActive(bool active)
+        {
+            if (floorSafetyRenderer != null) floorSafetyRenderer.gameObject.SetActive(active);
+            if (floorRenderer != null) floorRenderer.gameObject.SetActive(active);
         }
 
         private void LayoutToCamera()

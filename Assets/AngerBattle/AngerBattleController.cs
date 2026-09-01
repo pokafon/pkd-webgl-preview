@@ -481,7 +481,7 @@ namespace AngerBattle
             body.sleepMode = RigidbodySleepMode2D.NeverSleep;
             bullet.GetComponent<CircleCollider2D>().isTrigger = true;
             float speed = speedOverride > 0f ? speedOverride : standardEnemyBulletSpeed;
-            bullet.GetComponent<AngerBullet>().Configure(direction, speed, player, playerCollisionRadius, HandleWordContact);
+            bullet.GetComponent<AngerBullet>().Configure(direction, speed, player, playerCollisionRadius, HandleBulletHit);
         }
 
         private void HandleEnemyHealthChanged(int currentHealth, int maxHealth)
@@ -553,7 +553,7 @@ namespace AngerBattle
             battleDefeated = true;
         }
 
-        private void HandleWordContact()
+        private void HandleBulletHit()
         {
             if (playerDefeated || playerInvulnerable || Time.time < nextContactEffectTime)
             {
@@ -1027,14 +1027,6 @@ namespace AngerBattle
 
         private void CleanupRuntimeObjects()
         {
-            foreach (FallingWord word in GetComponentsInChildren<FallingWord>(true))
-            {
-                if (word != null)
-                {
-                    word.gameObject.SetActive(false);
-                    Destroy(word.gameObject);
-                }
-            }
             ClearEnemyBullets();
             CleanupPlayerBullets();
         }

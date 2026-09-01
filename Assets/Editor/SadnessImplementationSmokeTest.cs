@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using MemoryRecall;
 using SadnessBattle;
 using UnityEditor;
@@ -24,6 +25,9 @@ public static class SadnessImplementationSmokeTest
             Require(environment.homeGrid != null && environment.homeGrid.name == "SadnessHomeGrid", "home Grid is wired and renamed");
             Require(environment.outdoorFriendSpots != null && environment.outdoorFriendSpots.Length == 3, "three outdoor friend markers exist");
             Require(environment.outdoorDoor != null && environment.homeDoor != null, "door markers exist");
+            Require(environment.homeExitTrigger != null && environment.homeExitTrigger.isTrigger, "visible home exit trigger exists");
+            Require(environment.outdoorHomeTrigger != null && environment.outdoorHomeTrigger.isTrigger, "visible outdoor home trigger exists");
+            Require(environment.outdoorHomeMarkersAligned, "outdoor spawn and entrance are aligned to the house");
             Require(!environment.outdoorGrid.activeSelf && !environment.homeGrid.activeSelf, "both maps start hidden");
 
             AngerBattle.MinigameLauncher launcher = Resources.FindObjectsOfTypeAll<AngerBattle.MinigameLauncher>()
@@ -36,6 +40,7 @@ public static class SadnessImplementationSmokeTest
             Require(recall != null && recall.mapEnvironment == environment, "MemoryRecallController uses shared map");
             Require(recall.friends != null && recall.friends.Length == 3 && recall.friends.All(friend => friend.npcTransform != null), "memory recall has three friends");
             Require(recall.motherTransform != null && recall.eveningChimeClip != null, "memory recall mother and chime are wired");
+            ValidateHomeExitTransition(environment, recall);
 
             SadnessBattleController battle = Resources.FindObjectsOfTypeAll<SadnessBattleController>()
                 .FirstOrDefault(item => item.gameObject.scene.IsValid());
@@ -63,5 +68,53 @@ public static class SadnessImplementationSmokeTest
     private static void Require(bool condition, string message)
     {
         if (!condition) throw new Exception(message);
+    }
+
+    private static void ValidateHomeExitTransition(SadnessMapEnvironment environment, MemoryRecallController recall)
+    {
+        Require(recall.player != null, "memory recall player exists");
+        Require(environment.gameplayCamera != null, "shared gameplay camera exists");
+
+        environment.ShowHome(recall.player, true);
+        Require(!environment.IsAtHomeExit(recall.player.transform), "home start is outside the exit trigger");
+
+        float requiredHalfHeight =
+            (environment.homeMaxBounds.y - environment.homeMinBounds.y + environment.homeCameraPadding * 2f) * 0.5f;
+        Require(environment.gameplayCamera.orthographicSize >= requiredHalfHeight,
+            "home camera contains the whole vertical map with padding");
+
+        recall.player.transform.position = environment.homeExitTrigger.bounds.center;
+        Require(environment.IsAtHomeExit(recall.player.transform), "bottom-center corridor is inside the exit trigger");
+
+        Type phaseType = typeof(MemoryRecallController).GetNestedType("RecallPhase", BindingFlags.NonPublic);
+        FieldInfo phaseField = typeof(MemoryRecallController).GetField("phase", BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo updateMethod = typeof(MemoryRecallController).GetMethod("Update", BindingFlags.Instance | BindingFlags.NonPublic);
+        Require(phaseType != null && phaseField != null && updateMethod != null, "memory recall transition members are available");
+
+        phaseField.SetValue(recall, Enum.Parse(phaseType, "LeavingHome"));
+        updateMethod.Invoke(recall, null);
+        Require(environment.outdoorGrid.activeSelf && !environment.homeGrid.activeSelf,
+            "walking into the home exit switches to the outdoor map");
+
+        FieldInfo homeUnlockedField = typeof(MemoryRecallController).GetField(
+            "homeUnlocked", BindingFlags.Instance | BindingFlags.NonPublic);
+        Require(homeUnlockedField != null, "home unlocked flag is available");
+        homeUnlockedField.SetValue(recall, true);
+        phaseField.SetValue(recall, Enum.Parse(phaseType, "ReturningHome"));
+        recall.player.transform.position = environment.outdoorHomeTrigger.bounds.center;
+        updateMethod.Invoke(recall, null);
+        Require(environment.homeGrid.activeSelf && !environment.outdoorGrid.activeSelf,
+            "entering the outdoor house trigger while unlocked switches back home");
+
+        SpriteRenderer motherRenderer = recall.motherTransform.GetComponent<SpriteRenderer>();
+        MethodInfo isPlayerNearMethod = typeof(MemoryRecallController).GetMethod(
+            "IsPlayerNear", BindingFlags.Instance | BindingFlags.NonPublic);
+        Require(motherRenderer != null && isPlayerNearMethod != null, "mother interaction members are available");
+        recall.player.transform.position = motherRenderer.bounds.center;
+        bool canTalkToMother = (bool)isPlayerNearMethod.Invoke(
+            recall, new object[] { recall.motherTransform, recall.motherInteractRange });
+        Require(canTalkToMother, "mother can be spoken to after returning home");
+
+        environment.HideMaps(false);
     }
 }

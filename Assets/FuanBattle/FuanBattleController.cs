@@ -11,22 +11,57 @@ namespace AngerBattle
     /// このクラスは既存の開始・BGM・敵登場・撃破フローだけを管理する。
     ///
     /// 【全体の流れ】
-    /// 0. 開始演出：コンタックの一言（startLine）を現実パートと同じ見た目で表示し、
-    ///    スペースキーが押されるまで待つ（怒り戦と文言も共通）
-    /// 1. BGM（ワスレナグサ）を再生しながら、正解を示さないYES / NO質問を5問進める
-    /// 2. 質問を抜けたら、最後に1回だけ「不安」本体が登場する
+    /// 0. 石畳の上で不安とコンタックを見せ、コンタックの一言を表示する
+    /// 1. 不安だけが上へ逃げ、停止したコンタックが画面下へ抜ける縦スクロールからYES / NO質問へ接続する
+    /// 2. 仮の正解順を外すと1問目へ戻り、足跡を道標として残しながら5問進める
+    /// 3. 質問を抜けたら、最後に1回だけ「不安」本体が上側に登場する
     ///    ・登場と同時にBGMを止める
-    ///    ・登場と同時に、プレイヤーを不安の正面・画面中央へ自動移動させる
+    ///    ・コンタックを下側、不安を上側に置いた近い縦構図にする
     ///    ・即セリフは出さず、1拍分だけ間を置く
-    /// 3. 一拍後、「不安」自身のセリフを表示し、スペースキーで読み進める
-    /// 3b. 続けてコンタックの返し（attackLine）を表示し、スペースキーで消す
-    /// 4. セリフを消してから一拍待ち、プレイヤー操作なしで自動的に弾を発射する
-    /// 5. 一発ヒットで不安を撃破し、不安戦終了
+    /// 4. 一拍後、「不安」自身のセリフを表示し、スペースキーで読み進める
+    /// 5. 続けてコンタックの返し（attackLine）を表示し、スペースキーで消す
+    /// 6. セリフを消してから一拍待ち、プレイヤー操作なしで上方向へ弾を発射する
+    /// 7. 一発ヒットで不安を撃破し、不安戦終了
     ///
-    /// 質問はマウス、左右キー、Y/Nキーに対応する。正誤判定やペナルティはない。
+    /// 質問はマウス、左右キー、Y/Nキーに対応する。正解表示はせず、順路を外すと1問目へ戻る。
     /// </summary>
     public class FuanBattleController : MonoBehaviour
     {
+        [Serializable]
+        public sealed class OpeningLayoutSettings
+        {
+            [Tooltip("冒頭開始時の不安の画面内位置。0〜1が画面内、Yが1より大きいと上へ画面外")]
+            public Vector2 anxietyStartViewport = new Vector2(0.52f, 0.69f);
+            [Tooltip("冒頭終了時の不安の画面内位置")]
+            public Vector2 anxietyEndViewport = new Vector2(0.52f, 1.18f);
+            [Tooltip("冒頭開始時のコンタックの画面内位置。演出中はその場に止まり、スクロール分だけ画面下へ抜ける")]
+            public Vector2 contackStartViewport = new Vector2(0.48f, 0.18f);
+            [Min(0.1f)]
+            [Tooltip("冒頭で上へ進む画面数。1なら床1画面分をスクロールする")]
+            public float scrollScreens = 1f;
+            [Range(0.05f, 1f)]
+            [Tooltip("不安の画面高に対する表示サイズ")]
+            public float anxietyScreenHeight = 0.38f;
+            [Range(0.05f, 1f)]
+            [Tooltip("コンタックの画面高に対する表示サイズ")]
+            public float contackScreenHeight = 0.40f;
+        }
+
+        [Serializable]
+        public sealed class FaceOffLayoutSettings
+        {
+            [Tooltip("締めでのコンタックの画面内位置")]
+            public Vector2 contackViewport = new Vector2(0.48f, 0.30f);
+            [Tooltip("締めでの不安の画面内位置")]
+            public Vector2 anxietyViewport = new Vector2(0.52f, 0.69f);
+            [Range(0.05f, 1f)]
+            [Tooltip("締めでのコンタックの画面高に対する表示サイズ")]
+            public float contackScreenHeight = 0.36f;
+            [Range(0.05f, 1f)]
+            [Tooltip("締めでの不安の画面高に対する表示サイズ")]
+            public float anxietyScreenHeight = 0.38f;
+        }
+
         [Header("参照")]
         public PlayerController player;
         public EnemyAnger enemy;
@@ -36,6 +71,22 @@ namespace AngerBattle
         public Transform bulletSpawnPoint;
         [Tooltip("Collider2D（Is Trigger）付きのDenialBulletプレハブ")]
         public GameObject denialBulletPrefab;
+
+        [Header("不安・コンタックの実画像")]
+        [Tooltip("不安の立ち絵。未設定ならResources/AngerBattle/AnxietyVerticalを読む")]
+        public Sprite anxietyCharacterSprite;
+        [Tooltip("コンタックの後ろ向き立ち絵。未設定ならResources/AngerBattle/ContackVerticalを読む")]
+        public Sprite contackCharacterSprite;
+        [Tooltip("冒頭で不安だけが上へ抜け、完全に画面外へ出るまでの秒数")]
+        public float openingChaseDuration = 1.15f;
+        [Tooltip("不安が完全に画面外へ出た後、床のスクロールを始めるまでの間")]
+        public float openingAfterExitHoldSeconds = 0.45f;
+        [Tooltip("不安が消えた後、質問画面まで床を上へスクロールする秒数")]
+        public float openingScrollDuration = 1.35f;
+        [Tooltip("冒頭の二人の位置・スクロール量・表示サイズ")]
+        public OpeningLayoutSettings openingLayout = new OpeningLayoutSettings();
+        [Tooltip("締めで向き合う二人の位置・表示サイズ")]
+        public FaceOffLayoutSettings faceOffLayout = new FaceOffLayoutSettings();
 
         [Header("YES / NO 背景・入口")]
         [Tooltip("質問中に表示する石畳の床")]
@@ -88,6 +139,15 @@ namespace AngerBattle
             "考えない 考えない 考えない",
             "すべてリセットしたい"
         };
+        [Tooltip("5問を抜ける仮の正解順。YES / NOで指定する")]
+        public string[] correctAnswers = new string[]
+        {
+            "YES",
+            "NO",
+            "YES",
+            "NO",
+            "YES"
+        };
         [Range(0f, 1.5f)]
         [Tooltip("質問UIの揺れ・ずれの強さ。0で動きを止められる")]
         public float questionMotionScale = 1f;
@@ -122,10 +182,6 @@ namespace AngerBattle
         [Tooltip("撃破直後、Good Morning演出の前に表示する一言（レベルアップ演出）。空文字なら表示しない")]
         public string levelUpLine = "心が少し軽くなった。";
 
-        [Header("不安登場時のプレイヤー移動")]
-        [Tooltip("不安登場時に、プレイヤーが不安の正面・画面中央へ移動するのにかかる時間（秒）")]
-        public float moveToCenterDuration = 0.3f;
-
         private bool battleDefeated = false;
         private Action onBattleFinished;
         private AnxietyQuestionExperience questionExperience;
@@ -134,6 +190,8 @@ namespace AngerBattle
         private Vector3 initialPlayerLocalPosition;
         private Vector3 initialPlayerLocalScale;
         private GameObject activeDenialBullet;
+        private Sprite resolvedAnxietySprite;
+        private Sprite resolvedContackSprite;
 
         private void Awake()
         {
@@ -206,16 +264,30 @@ namespace AngerBattle
 
         private IEnumerator RunBattleSequence()
         {
-            // --- 0. 開始演出：コンタックの一言を表示し、スペースキー入力を待つ ---
+            ResolveCharacterSprites();
+            bool questionReady = ConfigureQuestionExperience();
+            if (questionReady)
+            {
+                questionExperience.PrepareChaseOpening(resolvedAnxietySprite, resolvedContackSprite, openingLayout);
+            }
+
+            // --- 0. 石畳の上で二人を見せ、コンタックの一言を表示する ---
             yield return StartCoroutine(ShowLineAndWaitForSpace(startLine));
 
-            // --- 1. BGMを再生しながら、正解を示さないYES / NO質問を進める ---
+            // --- 1. 不安を追う縦スクロールから、YES / NO質問へ接続する ---
             if (bgm != null)
             {
                 bgm.PlayMusic();
             }
 
-            yield return StartCoroutine(RunQuestionSequence());
+            if (questionReady)
+            {
+                yield return StartCoroutine(questionExperience.PlayChaseIntro(
+                    openingChaseDuration,
+                    openingAfterExitHoldSeconds,
+                    openingScrollDuration));
+            }
+            yield return StartCoroutine(RunQuestionSequence(questionReady));
 
             // --- 2. 不安本体が登場。登場と同時にBGMを止める ---
             if (bgm != null)
@@ -232,10 +304,9 @@ namespace AngerBattle
 
             enemy.OnDefeated -= HandleEnemyDefeated;
             enemy.OnDefeated += HandleEnemyDefeated;
-            enemy.SetPresent(true);
 
-            // 質問画面の不透明な暗幕の裏で、不安とプレイヤーを戦闘位置へ準備する。
-            yield return StartCoroutine(MovePlayerToCenter());
+            // 質問画面の不透明な暗幕の裏で、実画像の二人を縦の向かい合わせに配置する。
+            PrepareVerticalFaceOff();
 
             // 準備が終わってから初めて射撃ステージを見せる。
             if (questionExperience != null)
@@ -294,42 +365,84 @@ namespace AngerBattle
             HideLine();
         }
 
-        /// <summary>不安登場時に、プレイヤーを不安の正面・画面中央へ移動させる。移動中〜移動後は手動操作を止める。</summary>
-        private IEnumerator MovePlayerToCenter()
+        /// <summary>締めで、コンタックを下、不安を上へ置いた近い縦構図を作る。</summary>
+        private void PrepareVerticalFaceOff()
         {
-            if (player == null || enemy == null) yield break;
+            if (player == null || enemy == null)
+            {
+                return;
+            }
 
             player.enabled = false;
-
-            Vector3 start = player.transform.position;
-            float centerX = (player.minBounds.x + player.maxBounds.x) / 2f;
-            float targetY = Mathf.Clamp(enemy.transform.position.y, player.minBounds.y, player.maxBounds.y);
-            Vector3 target = new Vector3(centerX, targetY, start.z);
-
-            float duration = Mathf.Max(0.01f, moveToCenterDuration);
-            float elapsed = 0f;
-            while (elapsed < duration)
+            Camera camera = questionCamera != null ? questionCamera : Camera.main;
+            if (camera == null)
             {
-                elapsed += Time.deltaTime;
-                float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
-                player.transform.position = Vector3.LerpUnclamped(start, target, t);
-                yield return null;
+                return;
             }
-            player.transform.position = target;
+
+            FaceOffLayoutSettings layout = faceOffLayout ?? new FaceOffLayoutSettings();
+            float distance = Mathf.Abs(camera.transform.position.z);
+            Vector3 contackPosition = camera.ViewportToWorldPoint(
+                new Vector3(layout.contackViewport.x, layout.contackViewport.y, distance));
+            Vector3 anxietyPosition = camera.ViewportToWorldPoint(
+                new Vector3(layout.anxietyViewport.x, layout.anxietyViewport.y, distance));
+            contackPosition.z = 0f;
+            anxietyPosition.z = 0f;
+
+            SpriteRenderer playerRenderer = player.GetComponent<SpriteRenderer>();
+            if (playerRenderer != null && resolvedContackSprite != null)
+            {
+                playerRenderer.sprite = resolvedContackSprite;
+                playerRenderer.color = Color.white;
+                playerRenderer.sortingOrder = 80;
+                SetRenderedHeight(
+                    player.transform,
+                    resolvedContackSprite,
+                    camera.orthographicSize * 2f * Mathf.Max(0.05f, layout.contackScreenHeight));
+            }
+            player.transform.position = contackPosition;
+
+            if (resolvedAnxietySprite != null)
+            {
+                enemy.SetBattleSprite(resolvedAnxietySprite);
+                SetRenderedHeight(
+                    enemy.transform,
+                    resolvedAnxietySprite,
+                    camera.orthographicSize * 2f * Mathf.Max(0.05f, layout.anxietyScreenHeight));
+            }
+            enemy.transform.position = anxietyPosition;
+            SpriteRenderer enemyRenderer = enemy.GetComponent<SpriteRenderer>();
+            if (enemyRenderer != null)
+            {
+                enemyRenderer.color = Color.white;
+                enemyRenderer.sortingOrder = 81;
+            }
+            // 旧来の右から横へ入る登場アニメーションは使わない。
+            enemy.SetPresent(true, false);
         }
 
-        private IEnumerator RunQuestionSequence()
+        private IEnumerator RunQuestionSequence(bool alreadyConfigured)
         {
             if (player != null)
             {
                 player.enabled = false;
             }
 
+            if (!alreadyConfigured && !ConfigureQuestionExperience())
+            {
+                yield break;
+            }
+
+            yield return questionExperience.Play(questions, intrusiveLines, correctAnswers);
+        }
+
+        private bool ConfigureQuestionExperience()
+        {
             Canvas canvas = attackLineText != null ? attackLineText.GetComponentInParent<Canvas>() : null;
             if (canvas == null || attackLineText == null || attackLineText.font == null)
             {
                 Debug.LogError("[FuanBattle] 質問UIに必要なCanvasまたはTMPフォントが見つかりません。", this);
-                yield break;
+                return false;
             }
 
             if (questionExperience == null)
@@ -362,8 +475,7 @@ namespace AngerBattle
                 questionRainMaterial,
                 questionRunningWetRoadClip,
                 questionRunningWetRoadVolume);
-
-            yield return questionExperience.Play(questions, intrusiveLines);
+            return true;
         }
 
         private void HandleEnemyDefeated()
@@ -391,6 +503,37 @@ namespace AngerBattle
                 Destroy(activeDenialBullet);
             }
             activeDenialBullet = Instantiate(denialBulletPrefab, spawnPos, Quaternion.identity);
+            DenialBullet bullet = activeDenialBullet.GetComponent<DenialBullet>();
+            if (bullet != null && enemy != null)
+            {
+                Vector2 direction = enemy.transform.position - spawnPos;
+                bullet.Configure(direction, Color.white);
+            }
+        }
+
+        private void ResolveCharacterSprites()
+        {
+            resolvedAnxietySprite = anxietyCharacterSprite != null
+                ? anxietyCharacterSprite
+                : Resources.Load<Sprite>("AngerBattle/AnxietyVertical");
+            resolvedContackSprite = contackCharacterSprite != null
+                ? contackCharacterSprite
+                : Resources.Load<Sprite>("AngerBattle/ContackVertical");
+
+            if (resolvedAnxietySprite == null || resolvedContackSprite == null)
+            {
+                Debug.LogWarning("[FuanBattle] 不安またはコンタックの実画像を読み込めませんでした。", this);
+            }
+        }
+
+        private static void SetRenderedHeight(Transform target, Sprite sprite, float targetHeight)
+        {
+            if (target == null || sprite == null)
+            {
+                return;
+            }
+            float scale = Mathf.Max(0.001f, targetHeight) / Mathf.Max(0.001f, sprite.bounds.size.y);
+            target.localScale = new Vector3(scale, scale, 1f);
         }
 
         private void CaptureInitialPlayerState()

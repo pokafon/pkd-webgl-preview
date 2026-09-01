@@ -32,7 +32,7 @@ namespace BedFlight.EditorTools
         private const string SpritesDir = "Assets/BedFlight/Sprites";
         private const string PrefabsDir = "Assets/BedFlight/Prefabs";
         private const string FontPath = "Assets/Fonts/NotoSansJP SDF.asset";
-        private const string PlayerSpritePathInAngerBattle = "Assets/AngerBattle/Sprites/PlayerSprite.png";
+        private const string PlayerSpritePathInAngerBattle = "Assets/Resources/AngerBattle/ContackVertical.png";
         private const string BulletSpritePathInAngerBattle = "Assets/AngerBattle/Sprites/BulletSprite.png";
 
         [MenuItem("Tools/BedFlight/Build Scene")]
@@ -93,12 +93,13 @@ namespace BedFlight.EditorTools
             var riderSprite = CreateCircleSprite(SpritesDir + "/RiderSprite.png", new Color(0.95f, 0.8f, 0.65f), new Color(0.55f, 0.4f, 0.3f));
             var whiteSquareSprite = CreateFlatColorSprite(SpritesDir + "/WhiteSquare.png", Color.white);
 
-            DestroyIfExists(scene, "BedFlightRoot");
+            SceneHierarchyUtility.DestroyNamedObject(scene, "BedFlightRoot");
 
             GameObject contacBulletPrefab = BuildContacBulletPrefab(bulletSprite);
 
             // --- BedFlightRoot 階層 ---
             var root = new GameObject("BedFlightRoot");
+            SceneHierarchyUtility.MoveUnderGroup(scene, root, SceneHierarchyUtility.MinigamesGroupName);
 
             // --- 背景（空＋街のパララックス） ---
             var cityGO = new GameObject("CityBackground", typeof(CityBackgroundScroller));
@@ -117,7 +118,7 @@ namespace BedFlight.EditorTools
 
             // --- プレイヤー（ベッドに乗った主人公） ---
             var playerGO = new GameObject(
-                "Player",
+                "FlyingBed",
                 typeof(SpriteRenderer),
                 typeof(AngerBattle.PlayerController),
                 typeof(Rigidbody2D),
@@ -144,7 +145,7 @@ namespace BedFlight.EditorTools
             riderGO.GetComponent<SpriteRenderer>().sortingOrder = 1;
 
             // --- コンタック（追ってくる本体。見た目は怒り戦・不安戦のプレイヤーと同じ） ---
-            var contacGO = new GameObject("Contac", typeof(SpriteRenderer), typeof(ContacChaser));
+            var contacGO = new GameObject("Contack", typeof(SpriteRenderer), typeof(ContacChaser));
             contacGO.transform.SetParent(root.transform);
             contacGO.transform.position = new Vector3(4f, 0f, 0f);
             contacGO.transform.localScale = new Vector3(1.2f, 1.2f, 1f);
@@ -154,7 +155,7 @@ namespace BedFlight.EditorTools
             contacChaser.sprite = contacGO.GetComponent<SpriteRenderer>();
 
             // --- セリフ表示UI（現実パートと同じ見た目：背景パネル＋話者名＋本文）＋終了暗転パネル ---
-            var battleUIGO = new GameObject("BattleUI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+            var battleUIGO = new GameObject("DialogueUI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
             battleUIGO.transform.SetParent(root.transform, false);
             var canvas = battleUIGO.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -291,18 +292,6 @@ namespace BedFlight.EditorTools
             if (missing.Count > 0)
             {
                 throw new Exception("BedFlightControllerの参照が未設定です: " + string.Join(", ", missing));
-            }
-        }
-
-        private static void DestroyIfExists(UnityEngine.SceneManagement.Scene scene, string name)
-        {
-            var roots = scene.GetRootGameObjects();
-            for (int i = roots.Length - 1; i >= 0; i--)
-            {
-                if (roots[i].name == name)
-                {
-                    UnityEngine.Object.DestroyImmediate(roots[i]);
-                }
             }
         }
 

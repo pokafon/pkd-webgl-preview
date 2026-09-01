@@ -1,6 +1,9 @@
 # 不安戦 実装一式 セットアップ手順
 
-コードは実装済みです（`FuanBattleController.cs`、および`Assets/AngerBattle/`の`PlayerController.cs`/`DenialBullet.cs`/`BattleBGM.cs`/`FallingWord.cs`を共用）。
+> **旧版**：このREADMEは初期の複製構築方式を残した履歴資料です。現在の`SampleScene`は構築済みで、質問・足跡・冒頭スクロールも別仕様へ更新されています。現在の実装仕様は[現行仕様.md](../../現行仕様.md)を正とし、以下の手順は使用しないでください。
+
+コードは実装済みです（`FuanBattleController.cs`、および`Assets/AngerBattle/`の`PlayerController.cs`/`DenialBullet.cs`/`BattleBGM.cs`を共用）。
+> **注（2026-08-31）**：`FallingWord.cs`は不要になったため削除済みです。
 ここから先の**Unityエディタ上でのシーン構築**は、怒り戦（`AngerBattleRoot`）とほぼ同じ構造をコピーして作るのが一番早くて安全です。
 
 ---

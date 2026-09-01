@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using MemoryRecall;
 using TMPro;
 using UnityEditor;
@@ -16,11 +17,14 @@ namespace MemoryRecall.EditorTools
     {
         private const string ScenePath = "Assets/Scenes/SampleScene.unity";
         private const string FontPath = "Assets/Fonts/NotoSansJP SDF.asset";
-        private const string PlayerSpritePath = "Assets/Sprites/Player_Placeholder.png";
-        private const string FallbackPlayerSpritePath = "Assets/AngerBattle/Sprites/PlayerSprite.png";
-        private const string MotherSpritePath = "Assets/Sprites/mum.png";
-        private const string FriendSpritePath = "Assets/Sprites/frendA.png";
+        private const string PlayerSpritePath = "Assets/Sprites/Tiles/pixelworld_complete_v.1.8/Characters/MaleCharacter/PNGs/M_idle_front-Sheet.png";
+        private const string PlayerSpriteName = "M_idle_front-Sheet_3";
+        private const string MotherSpritePath = "Assets/Sprites/Tiles/pixelworld_complete_v.1.8/Characters/FemaleCharacter/PNGs/F_idle_left-Sheet.png";
+        private const string MotherSpriteName = "F_idle_left-Sheet_3";
         private const string EveningChimePath = "Assets/Audio/夕焼け小焼け 防災行政無線チャイム 17時.mp3";
+
+        private static readonly string[] CurrentFriendNames = { "MemoryFriendA", "MemoryFriendB", "MemoryFriendC" };
+        private static readonly string[] LegacyPlacedFriendNames = { "Player_2", "Player_Actions_4", "Player_9" };
 
         [MenuItem("Tools/MemoryRecall/Build Scene")]
         public static void BuildFromMenu()
@@ -59,25 +63,32 @@ namespace MemoryRecall.EditorTools
             SadnessMapEnvironment environment = SadnessMapEditorUtility.EnsureEnvironment(scene);
 
             TMP_FontAsset font = RequireAsset<TMP_FontAsset>(FontPath);
-            Sprite playerSprite = AssetDatabase.LoadAssetAtPath<Sprite>(PlayerSpritePath) ??
-                                  RequireAsset<Sprite>(FallbackPlayerSpritePath);
-            Sprite motherSprite = RequireCharacterSprite(MotherSpritePath);
-            Sprite friendSprite = RequireCharacterSprite(FriendSpritePath);
+            Sprite playerSprite = RequireSpriteSubAsset(PlayerSpritePath, PlayerSpriteName);
+            Sprite motherSprite = RequireSpriteSubAsset(MotherSpritePath, MotherSpriteName);
             AudioClip eveningChime = RequireAsset<AudioClip>(EveningChimePath);
 
-            DestroyRoot(scene, "MemoryRecallRoot");
+            // ユーザーが屋外へ配置した最新の3人を保護してから旧MemoryRecallRootを破棄する。
+            // 旧ビルダー生成のFriendA/B/CはRootごと削除され、重複して残らない。
+            GameObject[] friends = FindCurrentFriendActors(scene);
+            foreach (GameObject friend in friends)
+            {
+                friend.transform.SetParent(environment.transform, true);
+            }
+
+            SceneHierarchyUtility.DestroyNamedObject(scene, "MemoryRecallRoot");
             GameObject root = new GameObject("MemoryRecallRoot");
             SceneManager.MoveGameObjectToScene(root, scene);
+            SceneHierarchyUtility.MoveUnderGroup(scene, root, SceneHierarchyUtility.MinigamesGroupName);
 
-            GameObject mother = BuildActor(root.transform, "Mother", motherSprite, environment.homeMotherSpot.position);
-            GameObject[] friends = new GameObject[3];
+            GameObject mother = BuildActor(root.transform, "MotherActor", motherSprite, environment.homeMotherSpot.position);
             for (int index = 0; index < friends.Length; index++)
             {
-                friends[index] = BuildActor(
-                    root.transform,
-                    $"Friend{(char)('A' + index)}",
-                    friendSprite,
-                    environment.outdoorFriendSpots[index].position);
+                friends[index].name = CurrentFriendNames[index];
+                friends[index].transform.SetParent(root.transform, true);
+                friends[index].SetActive(true);
+                SpriteRenderer renderer = friends[index].GetComponent<SpriteRenderer>();
+                renderer.sortingOrder = 4;
+                environment.outdoorFriendSpots[index].position = friends[index].transform.position;
             }
 
             GameObject playerObject = new GameObject("ChildPlayer", typeof(SpriteRenderer), typeof(AngerBattle.PlayerController));
@@ -144,6 +155,27 @@ namespace MemoryRecall.EditorTools
             return actor;
         }
 
+        private static GameObject[] FindCurrentFriendActors(Scene scene)
+        {
+            Transform[] transforms = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<Transform>(true))
+                .ToArray();
+            var result = new GameObject[CurrentFriendNames.Length];
+
+            for (int index = 0; index < result.Length; index++)
+            {
+                Transform actor = transforms.FirstOrDefault(item => item.name == CurrentFriendNames[index]) ??
+                                  transforms.FirstOrDefault(item => item.name == LegacyPlacedFriendNames[index]);
+                if (actor == null || actor.GetComponent<SpriteRenderer>() == null)
+                {
+                    throw new Exception($"最新の友達{index + 1}（{LegacyPlacedFriendNames[index]}）が見つかりません。");
+                }
+                result[index] = actor.gameObject;
+            }
+
+            return result;
+        }
+
         private static void BuildDialogueUI(
             Transform parent,
             TMP_FontAsset font,
@@ -206,18 +238,13 @@ namespace MemoryRecall.EditorTools
             rect.sizeDelta = new Vector2(-400f, height);
         }
 
-        private static Sprite RequireCharacterSprite(string path)
+        private static Sprite RequireSpriteSubAsset(string path, string spriteName)
         {
-            TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
-            if (importer == null) throw new Exception("画像が見つかりません: " + path);
-            importer.textureType = TextureImporterType.Sprite;
-            importer.spriteImportMode = SpriteImportMode.Single;
-            importer.spritePixelsPerUnit = 16f;
-            importer.filterMode = FilterMode.Point;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.mipmapEnabled = false;
-            importer.SaveAndReimport();
-            return RequireAsset<Sprite>(path);
+            Sprite sprite = AssetDatabase.LoadAllAssetsAtPath(path)
+                .OfType<Sprite>()
+                .FirstOrDefault(candidate => candidate.name == spriteName);
+            if (sprite == null) throw new Exception($"スプライトが見つかりません: {path} / {spriteName}");
+            return sprite;
         }
 
         private static T RequireAsset<T>(string path) where T : UnityEngine.Object
@@ -255,12 +282,5 @@ namespace MemoryRecall.EditorTools
             }
         }
 
-        private static void DestroyRoot(Scene scene, string name)
-        {
-            foreach (GameObject root in scene.GetRootGameObjects())
-            {
-                if (root.name == name) UnityEngine.Object.DestroyImmediate(root);
-            }
-        }
     }
 }

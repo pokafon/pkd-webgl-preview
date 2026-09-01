@@ -17,8 +17,13 @@ public static class JapaneseFontAssetGenerator
 {
     private const string SourceFontPath = "Assets/Fonts/NotoSansJP-Regular.ttf";
     private const string OutputFontAssetPath = "Assets/Fonts/NotoSansJP SDF.asset";
-    private const string OldFontAssetPath = "Assets/Fonts/YuGothicUI SDF.asset";
+    private const string ScenePath = "Assets/Scenes/SampleScene.unity";
     private const string YarnScriptsDir = "Assets/Yarn";
+    private static readonly string[] OldFontAssetPaths =
+    {
+        "Assets/Fonts/YuGothicUI SDF.asset",
+        "Assets/Fonts/YuGothicUI SDF 1.asset",
+    };
 
     // 各ミニゲームのコントローラーには、Yarnと未接続のままC#のstringリテラルとして
     // セリフがハードコードされている箇所がある（例：BedFlightControllerの「遠くに行きたい」
@@ -30,6 +35,8 @@ public static class JapaneseFontAssetGenerator
         "Assets/AngerBattle",
         "Assets/FuanBattle",
         "Assets/BedFlight",
+        "Assets/MemoryRecall",
+        "Assets/SadnessBattle",
     };
 
     [MenuItem("Tools/Yarn Dialogue/Generate Japanese Font Asset")]
@@ -87,7 +94,8 @@ public static class JapaneseFontAssetGenerator
         AssetDatabase.AddObjectToAsset(fontAsset.material, fontAsset);
         foreach (var tex in fontAsset.atlasTextures)
         {
-            AssetDatabase.AddObjectToAsset(tex, fontAsset);
+            if (tex != null)
+                AssetDatabase.AddObjectToAsset(tex, fontAsset);
         }
         EditorUtility.SetDirty(fontAsset);
         AssetDatabase.SaveAssets();
@@ -113,6 +121,27 @@ public static class JapaneseFontAssetGenerator
 
         Selection.activeObject = fontAsset;
         EditorGUIUtility.PingObject(fontAsset);
+    }
+
+    /// <summary>CI/リリース確認用。SampleSceneを開いて再生成・参照更新・保存まで行う。</summary>
+    public static void GenerateForRelease()
+    {
+        try
+        {
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            Generate();
+            if (!EditorSceneManager.SaveScene(scene))
+                throw new IOException("SampleSceneの保存に失敗しました。");
+
+            AssetDatabase.SaveAssets();
+            Debug.Log("JAPANESE_FONT_RELEASE_RESULT: PASS");
+            EditorApplication.Exit(0);
+        }
+        catch (System.Exception exception)
+        {
+            Debug.LogError("JAPANESE_FONT_RELEASE_RESULT: FAIL\n" + exception);
+            EditorApplication.Exit(1);
+        }
     }
 
     private static string BuildCharacterSet()
@@ -168,7 +197,10 @@ public static class JapaneseFontAssetGenerator
 
     private static int ReplaceFontReferencesInOpenScenes(TMP_FontAsset newFont)
     {
-        var oldFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(OldFontAssetPath);
+        var oldFonts = OldFontAssetPaths
+            .Select(path => AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(path))
+            .Where(font => font != null)
+            .ToArray();
         int count = 0;
 
         for (int i = 0; i < EditorSceneManager.sceneCount; i++)
@@ -185,7 +217,7 @@ public static class JapaneseFontAssetGenerator
                     // 削除→再作成しており、アセット内部のMaterialサブアセットのfileIDが再生成のたびに
                     // 変わるため。既にnewFontを指しているTMP_Textでも、tmp.font = newFontを
                     // 再代入し直さないとm_sharedMaterialが古いfileIDのまま壊れて残ってしまう。
-                    bool usesOldFont = oldFont != null && tmp.font == oldFont;
+                    bool usesOldFont = oldFonts.Contains(tmp.font);
                     bool usesCurrentNewFont = tmp.font == newFont;
                     if (!usesOldFont && !usesCurrentNewFont) continue;
 
@@ -198,6 +230,9 @@ public static class JapaneseFontAssetGenerator
 
             if (count > 0) EditorSceneManager.MarkSceneDirty(scene);
         }
+
+        TMP_Settings.defaultFontAsset = newFont;
+        EditorUtility.SetDirty(TMP_Settings.instance);
 
         return count;
     }

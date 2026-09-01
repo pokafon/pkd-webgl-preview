@@ -14,12 +14,13 @@ internal static class SadnessMapEditorUtility
     internal static SadnessMapEnvironment EnsureEnvironment(Scene scene)
     {
         GameObject[] roots = scene.GetRootGameObjects();
-        GameObject environmentObject = roots.FirstOrDefault(go => go.name == EnvironmentName);
+        GameObject environmentObject = SceneHierarchyUtility.Find(scene, EnvironmentName);
         if (environmentObject == null)
         {
             environmentObject = new GameObject(EnvironmentName);
             SceneManager.MoveGameObjectToScene(environmentObject, scene);
         }
+        SceneHierarchyUtility.MoveUnderGroup(scene, environmentObject, SceneHierarchyUtility.WorldGroupName);
 
         SadnessMapEnvironment environment = environmentObject.GetComponent<SadnessMapEnvironment>();
         if (environment == null)
@@ -39,11 +40,17 @@ internal static class SadnessMapEditorUtility
         homeGrid.transform.SetParent(environmentObject.transform, true);
         outdoorGrid.transform.SetParent(environmentObject.transform, true);
 
+        // Tilemapは非アクティブのままだとOnEnableが走らずCompressBounds()が空の範囲を返すため、
+        // 範囲計算の間だけ強制的にアクティブにする（末尾で両Gridとも非アクティブに戻す）。
+        homeGrid.SetActive(true);
+        outdoorGrid.SetActive(true);
+
         Bounds outdoorBounds = CalculateWorldBounds(outdoorGrid);
         Bounds homeBounds = CalculateWorldBounds(homeGrid);
 
         environment.outdoorGrid = outdoorGrid;
         environment.homeGrid = homeGrid;
+        environment.homeWallTilemap = homeGrid.transform.Find("Wall")?.GetComponent<Tilemap>();
         environment.gameplayCamera = Camera.main;
         environment.outdoorMinBounds = InsetMin(outdoorBounds, 0.5f);
         environment.outdoorMaxBounds = InsetMax(outdoorBounds, 0.5f);
@@ -67,11 +74,14 @@ internal static class SadnessMapEditorUtility
         environment.homeDoor = GetOrCreateMarker(
             environmentObject.transform,
             "HomeDoor",
-            Point(homeBounds, 0f, -0.30f));
+            BottomCenter(homeBounds, 0.6f));
+        ConfigureHomeExitTrigger(environment);
         environment.homeMotherSpot = GetOrCreateMarker(
             environmentObject.transform,
             "HomeMotherSpot",
             Point(homeBounds, -0.15f, 0.12f));
+
+        ConfigureOutdoorHomeEntrance(scene, environment);
 
         environment.outdoorFriendSpots = new[]
         {
@@ -168,6 +178,72 @@ internal static class SadnessMapEditorUtility
             bounds.center.x + bounds.size.x * normalizedX,
             bounds.center.y + bounds.size.y * normalizedY,
             0f);
+    }
+
+    private static Vector3 BottomCenter(Bounds bounds, float insetFromBottom)
+    {
+        return new Vector3(
+            bounds.center.x,
+            bounds.min.y + Mathf.Max(0f, insetFromBottom),
+            0f);
+    }
+
+    private static void ConfigureHomeExitTrigger(SadnessMapEnvironment environment)
+    {
+        BoxCollider2D trigger = environment.homeDoor.GetComponent<BoxCollider2D>();
+        bool created = trigger == null;
+        if (created)
+        {
+            trigger = environment.homeDoor.gameObject.AddComponent<BoxCollider2D>();
+        }
+
+        trigger.isTrigger = true;
+        if (created || trigger.size.x <= 0.01f || trigger.size.y <= 0.01f)
+        {
+            trigger.size = new Vector2(
+                Mathf.Max(1f, environment.homeExitHalfWidth * 2f),
+                Mathf.Max(1f, environment.homeExitDepth));
+            // HomeDoor自身を通路の下端として、Colliderを上方向へ伸ばす。
+            trigger.offset = new Vector2(0f, trigger.size.y * 0.5f);
+        }
+
+        environment.homeExitTrigger = trigger;
+    }
+
+    private static void ConfigureOutdoorHomeEntrance(Scene scene, SadnessMapEnvironment environment)
+    {
+        Transform house = scene.GetRootGameObjects()
+            .SelectMany(root => root.GetComponentsInChildren<Transform>(true))
+            .FirstOrDefault(item => item.name == "houses_0" && item.GetComponent<SpriteRenderer>() != null);
+        if (house == null)
+        {
+            throw new Exception("屋外マップの家（houses_0）が見つかりません。");
+        }
+
+        SpriteRenderer houseRenderer = house.GetComponent<SpriteRenderer>();
+        Bounds houseBounds = houseRenderer.bounds;
+        if (!environment.outdoorHomeMarkersAligned)
+        {
+            // houses_0は家画像全体。下辺中央を玄関、その少し下を屋外出現地点にする。
+            Vector3 entrance = new Vector3(houseBounds.center.x, houseBounds.min.y + 0.55f, 0f);
+            environment.outdoorDoor.position = entrance;
+            environment.outdoorStart.position = entrance + Vector3.down * 1.35f;
+            environment.outdoorHomeMarkersAligned = true;
+        }
+
+        BoxCollider2D trigger = environment.outdoorDoor.GetComponent<BoxCollider2D>();
+        bool created = trigger == null;
+        if (created)
+        {
+            trigger = environment.outdoorDoor.gameObject.AddComponent<BoxCollider2D>();
+        }
+        trigger.isTrigger = true;
+        if (created || trigger.size.x <= 0.01f || trigger.size.y <= 0.01f)
+        {
+            trigger.size = new Vector2(2.6f, 2f);
+            trigger.offset = new Vector2(0f, -0.65f);
+        }
+        environment.outdoorHomeTrigger = trigger;
     }
 
     private static Vector2 InsetMin(Bounds bounds, float inset)

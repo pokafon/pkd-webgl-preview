@@ -1,0 +1,1066 @@
+fileFormatVersion: 2
+guid: 75ac2578038535441b0bc8169c40d744
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -6365514111891829506
+    second: seats_0
+  - first:
+      213: -608519802804822040
+    second: seats_1
+  - first:
+      213: 2243230191646488274
+    second: seats_2
+  - first:
+      213: 4584420809591977509
+    second: seats_3
+  - first:
+      213: 6035921692713334707
+    second: seats_4
+  - first:
+      213: -630399602961212970
+    second: seats_5
+  - first:
+      213: 3104248309102389473
+    second: seats_6
+  - first:
+      213: -1213636281314682143
+    second: seats_7
+  - first:
+      213: 3926769846675128403
+    second: seats_8
+  - first:
+      213: 8790071433993720674
+    second: seats_9
+  - first:
+      213: 75957887085317033
+    second: seats_10
+  - first:
+      213: 5008730865495533242
+    second: seats_11
+  - first:
+      213: -8497262639949346270
+    second: seats_12
+  - first:
+      213: 8621810391394128885
+    second: seats_13
+  - first:
+      213: -4180333363126566828
+    second: seats_14
+  - first:
+      213: 925212736484763252
+    second: seats_15
+  - first:
+      213: 1628831368927733734
+    second: seats_16
+  - first:
+      213: 7173644895439160259
+    second: seats_17
+  - first:
+      213: -8123753681999092844
+    second: seats_18
+  - first:
+      213: 1291067283602092449
+    second: seats_19
+  - first:
+      213: -2231490602150231668
+    second: seats_20
+  - first:
+      213: 7141284104925640353
+    second: seats_21
+  - first:
+      213: 4921323451586997180
+    second: seats_22
+  - first:
+      213: 8340197595126336510
+    second: seats_23
+  - first:
+      213: 4871582767571466834
+    second: seats_24
+  - first:
+      213: 7633560403704892366
+    second: seats_25
+  - first:
+      213: -4752016377720238121
+    second: seats_26
+  - first:
+      213: 6556421118094580118
+    second: seats_27
+  - first:
+      213: -7180392157262678379
+    second: seats_28
+  - first:
+      213: 8355374360124507690
+    second: seats_29
+  - first:
+      213: -5635212380109161096
+    second: seats_30
+  - first:
+      213: 5474824030735554464
+    second: seats_31
+  - first:
+      213: -2664735305880317766
+    second: seats_32
+  - first:
+      213: 5953085987748076261
+    second: seats_33
+  - first:
+      213: 3671954909541505693
+    second: seats_34
+  - first:
+      213: 6400200241676894308
+    second: seats_35
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 16
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: seats_0
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 239
+        width: 14
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: efc83f324a629a7a0800000000000000
+      internalID: -6365514111891829506
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_1
+      rect:
+        serializedVersion: 2
+        x: 33
+        y: 239
+        width: 14
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8ef1703a67a1e87f0800000000000000
+      internalID: -608519802804822040
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_2
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 239
+        width: 14
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2d6358269fd812f10800000000000000
+      internalID: 2243230191646488274
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_3
+      rect:
+        serializedVersion: 2
+        x: 65
+        y: 239
+        width: 14
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 52673a0ef622f9f30800000000000000
+      internalID: 4584420809591977509
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_4
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 239
+        width: 14
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b7b042ccc6e3c350800000000000000
+      internalID: 6035921692713334707
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_5
+      rect:
+        serializedVersion: 2
+        x: 97
+        y: 239
+        width: 14
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d913fea6ee5047f0800000000000000
+      internalID: -630399602961212970
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_6
+      rect:
+        serializedVersion: 2
+        x: 113
+        y: 239
+        width: 14
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e8a7aed361841b20800000000000000
+      internalID: 3104248309102389473
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_7
+      rect:
+        serializedVersion: 2
+        x: 129
+        y: 239
+        width: 14
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1ea56b57b3c482fe0800000000000000
+      internalID: -1213636281314682143
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_8
+      rect:
+        serializedVersion: 2
+        x: 145
+        y: 239
+        width: 14
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 35049c1ee50be7630800000000000000
+      internalID: 3926769846675128403
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_9
+      rect:
+        serializedVersion: 2
+        x: 161
+        y: 239
+        width: 14
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 263118db56b9cf970800000000000000
+      internalID: 8790071433993720674
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_10
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 209
+        width: 16
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9ab0c9dbb4bdd0100800000000000000
+      internalID: 75957887085317033
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_11
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 207
+        width: 16
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ab6656d4f26928540800000000000000
+      internalID: 5008730865495533242
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_12
+      rect:
+        serializedVersion: 2
+        x: 48
+        y: 209
+        width: 16
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 22a0f9e36a8a31a80800000000000000
+      internalID: -8497262639949346270
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_13
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 207
+        width: 16
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5f391d3eed2d6a770800000000000000
+      internalID: 8621810391394128885
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_14
+      rect:
+        serializedVersion: 2
+        x: 80
+        y: 209
+        width: 16
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 450802064f87cf5c0800000000000000
+      internalID: -4180333363126566828
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_15
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 207
+        width: 16
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 47667d3f41407dc00800000000000000
+      internalID: 925212736484763252
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_16
+      rect:
+        serializedVersion: 2
+        x: 112
+        y: 209
+        width: 16
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6e763f70085ca9610800000000000000
+      internalID: 1628831368927733734
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_17
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 207
+        width: 16
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3c302795608ed8360800000000000000
+      internalID: 7173644895439160259
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_18
+      rect:
+        serializedVersion: 2
+        x: 144
+        y: 209
+        width: 16
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4932ca55111a24f80800000000000000
+      internalID: -8123753681999092844
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_19
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 207
+        width: 16
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1a13b34aadacae110800000000000000
+      internalID: 1291067283602092449
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_20
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 159
+        width: 34
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c81863bce172801e0800000000000000
+      internalID: -2231490602150231668
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_21
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 159
+        width: 34
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1a67c3aae00fa1360800000000000000
+      internalID: 7141284104925640353
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_22
+      rect:
+        serializedVersion: 2
+        x: 112
+        y: 159
+        width: 32
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cbb64acda9d0c4440800000000000000
+      internalID: 4921323451586997180
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_23
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 159
+        width: 32
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: efb821646855eb370800000000000000
+      internalID: 8340197595126336510
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_24
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 111
+        width: 34
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 25af20367b65b9340800000000000000
+      internalID: 4871582767571466834
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_25
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 111
+        width: 34
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ecb415a2ebadfe960800000000000000
+      internalID: 7633560403704892366
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_26
+      rect:
+        serializedVersion: 2
+        x: 112
+        y: 111
+        width: 32
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7df852f18427d0eb0800000000000000
+      internalID: -4752016377720238121
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_27
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 111
+        width: 32
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 69995edf4461dfa50800000000000000
+      internalID: 6556421118094580118
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_28
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 63
+        width: 34
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5967b56506f1a5c90800000000000000
+      internalID: -7180392157262678379
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_29
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 63
+        width: 34
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a26c0ac36b044f370800000000000000
+      internalID: 8355374360124507690
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_30
+      rect:
+        serializedVersion: 2
+        x: 112
+        y: 63
+        width: 32
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 87db5b96234bbc1b0800000000000000
+      internalID: -5635212380109161096
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_31
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 63
+        width: 32
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0a7d3c7f27b7afb40800000000000000
+      internalID: 5474824030735554464
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_32
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 15
+        width: 34
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ab0df809b55f40bd0800000000000000
+      internalID: -2664735305880317766
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_33
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 15
+        width: 34
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ea54114a2c9d9250800000000000000
+      internalID: 5953085987748076261
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_34
+      rect:
+        serializedVersion: 2
+        x: 112
+        y: 15
+        width: 32
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d9a197e098765f230800000000000000
+      internalID: 3671954909541505693
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: seats_35
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 15
+        width: 32
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4604588c53412d850800000000000000
+      internalID: 6400200241676894308
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      seats_0: -6365514111891829506
+      seats_1: -608519802804822040
+      seats_10: 75957887085317033
+      seats_11: 5008730865495533242
+      seats_12: -8497262639949346270
+      seats_13: 8621810391394128885
+      seats_14: -4180333363126566828
+      seats_15: 925212736484763252
+      seats_16: 1628831368927733734
+      seats_17: 7173644895439160259
+      seats_18: -8123753681999092844
+      seats_19: 1291067283602092449
+      seats_2: 2243230191646488274
+      seats_20: -2231490602150231668
+      seats_21: 7141284104925640353
+      seats_22: 4921323451586997180
+      seats_23: 8340197595126336510
+      seats_24: 4871582767571466834
+      seats_25: 7633560403704892366
+      seats_26: -4752016377720238121
+      seats_27: 6556421118094580118
+      seats_28: -7180392157262678379
+      seats_29: 8355374360124507690
+      seats_3: 4584420809591977509
+      seats_30: -5635212380109161096
+      seats_31: 5474824030735554464
+      seats_32: -2664735305880317766
+      seats_33: 5953085987748076261
+      seats_34: 3671954909541505693
+      seats_35: 6400200241676894308
+      seats_4: 6035921692713334707
+      seats_5: -630399602961212970
+      seats_6: 3104248309102389473
+      seats_7: -1213636281314682143
+      seats_8: 3926769846675128403
+      seats_9: 8790071433993720674
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

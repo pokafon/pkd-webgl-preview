@@ -19,7 +19,7 @@ namespace AngerBattle.EditorTools
     ///
     /// DialogueRunner.StartDialogue("Anger_TakeMed") から実際に
     /// &lt;&lt;start_minigame "IkariBattle"&gt;&gt; のYarnコマンド経路を通し、
-    /// BGM再生/停止・敵登場・攻撃セリフ表示・弾命中による撃破・戦闘終了までを
+    /// 縦配置・BGM・赤い弾幕・12HP・3つの節目台詞・撃破・戦闘終了までを
     /// 実際のPlayモード実行（Update/コルーチン/Physics2D）で検証する。
     /// 結果は "ANGERBATTLE_SMOKETEST_RESULT: PASS/FAIL" としてログに出力し、
     /// 終了コード0(成功)/1(失敗)でエディタを終了する。
@@ -34,9 +34,8 @@ namespace AngerBattle.EditorTools
         {
             WaitingForPlayMode,
             WaitingForLaunch,
-            WaitingAvoidPhaseEnd,
-            WaitingAttackLine,
-            FiringBullet,
+            WaitingBattleStart,
+            AdvancingHealth,
             WaitingBattleEnd,
         }
 
@@ -47,12 +46,16 @@ namespace AngerBattle.EditorTools
         private static AngerBattleController _controller;
         private static DialogueRunner _dialogueRunner;
         private static AudioSource _bgmAudioSource;
+        private static AngerBattleHUD _hud;
         private static readonly List<string> _errors = new List<string>();
         private static bool _capturing;
         private static bool _finished;
         private static bool _passed;
         private static string _failReason = "";
         private static double _lastDiagLogTime;
+        private static int _damageStep;
+        private static bool _waitingForThresholdLine;
+        private static bool _thresholdLineObserved;
 
         public static void Run()
         {
@@ -63,7 +66,11 @@ namespace AngerBattle.EditorTools
             _passed = false;
             _failReason = "";
             _dialogueRunner = null;
+            _hud = null;
             _lastDiagLogTime = 0;
+            _damageStep = 0;
+            _waitingForThresholdLine = false;
+            _thresholdLineObserved = false;
 
             EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
 
@@ -156,7 +163,7 @@ namespace AngerBattle.EditorTools
                     _controller = _launcher.angerBattleController;
                     if (_controller.player == null || _controller.enemy == null || _controller.bgm == null ||
                         _controller.bulletSpawnPoint == null || _controller.denialBulletPrefab == null ||
-                        _controller.fallingCharacterPrefab == null || _controller.attackLineText == null)
+                        _controller.attackLineText == null)
                     {
                         Fail("AngerBattleControllerの参照のいずれかが未設定です");
                         return;
@@ -177,14 +184,10 @@ namespace AngerBattle.EditorTools
 
                     _bgmAudioSource = _controller.bgm.GetComponent<AudioSource>();
 
-                    // テスト高速化のため、Playモード上のインスタンスのみタイミングを短縮する
-                    // （保存済みシーン/アセットの値は変更されない）
-                    _controller.bpm = 6000f;
-                    _controller.beatsPerCharacter = 1f;
-                    _controller.phraseGapBeats = 1f;
-                    _controller.spawnJitter = 0f;
-                    _controller.wordSpeed = 40f;
-                    _controller.beatsBeforeAttackLine = 1f;
+                    // テスト用に開始台詞を自動送りし、節目表示と弾幕間隔だけ短縮する。
+                    _controller.autoAdvanceDialogueForTests = true;
+                    _controller.thresholdLineDuration = 0.08f;
+                    _controller.phaseShotIntervals = new[] { 0.05f, 0.05f, 0.05f, 0.05f };
 
                     _capturing = true;
                     // MinigameLauncher.StartMinigameを直接呼ぶのではなく、DialogueRunnerの
@@ -202,63 +205,107 @@ namespace AngerBattle.EditorTools
                         return; // Fail済み
                     }
 
+                    // RunBattleは時計＋ノイズ導入演出をawaitしてからルートを有効化するため、
+                    // コマンド成功直後にはまだ非アクティブでも正常。次の状態で表示を待つ。
+                    SetState(State.WaitingBattleStart);
+                    break;
+
+                case State.WaitingBattleStart:
+                    if (now - _stateStartTime > StateTimeoutSeconds)
+                    {
+                        Fail("縦型戦闘の開始待ちがタイムアウト");
+                        return;
+                    }
                     if (!_launcher.battleRoot.activeSelf)
                     {
-                        Fail("コマンドディスパッチ成功後もAngerBattleRootがアクティブになりません");
-                        return;
+                        break;
                     }
-                    Debug.Log("[SmokeTest] <<start_minigame \"IkariBattle\">> によりAngerBattleRootがアクティブ化されました");
-                    SetState(State.WaitingAvoidPhaseEnd);
-                    break;
-
-                case State.WaitingAvoidPhaseEnd:
-                    if (now - _stateStartTime > StateTimeoutSeconds)
+                    if (_controller.enemy.IsPresent() && UnityEngine.Object.FindFirstObjectByType<AngerBullet>() != null)
                     {
-                        Fail("避けフェーズ終了(敵登場)待ちがタイムアウト");
-                        return;
-                    }
-                    if (_controller.enemy.IsPresent())
-                    {
-                        Debug.Log("[SmokeTest] 敵(怒り)が登場しました");
-                        if (_bgmAudioSource != null && _bgmAudioSource.isPlaying)
+                        Debug.Log("[SmokeTest] <<start_minigame \"IkariBattle\">> によりAngerBattleRootがアクティブ化されました");
+                        if (_controller.enemy.transform.position.y <= _controller.player.transform.position.y)
                         {
-                            Fail("敵登場と同時にBGMが停止していません");
+                            Fail("縦配置が逆です（怒りが上、コンタックが下になっていません）");
                             return;
                         }
-                        Debug.Log("[SmokeTest] BGM停止を確認");
-                        SetState(State.WaitingAttackLine);
+                        if (_controller.enemy.CurrentHealth != 12)
+                        {
+                            Fail("怒りの開始HPが12ではありません: " + _controller.enemy.CurrentHealth);
+                            return;
+                        }
+                        if (_bgmAudioSource != null && !_bgmAudioSource.isPlaying)
+                        {
+                            Fail("戦闘開始後にBGMが再生されていません");
+                            return;
+                        }
+                        _hud = UnityEngine.Object.FindFirstObjectByType<AngerBattleHUD>();
+                        if (_hud == null)
+                        {
+                            Fail("怒り戦の体力ゲージHUDが生成されていません");
+                            return;
+                        }
+                        _hud.SetEnemyHealth(9, 12);
+                        _hud.SetPlayerHealth(3, 4);
+                        if (Mathf.Abs(_hud.EnemyHealthRatio - 0.75f) > 0.001f || Mathf.Abs(_hud.PlayerHealthRatio - 0.75f) > 0.001f)
+                        {
+                            Fail($"体力ゲージの横幅が反映されません: anger={_hud.EnemyHealthRatio}, contack={_hud.PlayerHealthRatio}");
+                            return;
+                        }
+                        _hud.SetEnemyHealth(12, 12);
+                        _hud.SetPlayerHealth(4, 4);
+                        Debug.Log("[SmokeTest] 縦配置・怒り12HP・赤い弾幕・BGM再生を確認");
+                        _controller.enemy.OnDefeated += OnEnemyDefeatedDiagnostic;
+                        SetState(State.AdvancingHealth);
                     }
                     break;
 
-                case State.WaitingAttackLine:
+                case State.AdvancingHealth:
                     if (now - _stateStartTime > StateTimeoutSeconds)
                     {
-                        Fail("攻撃セリフ表示待ちがタイムアウト");
+                        Fail("12HPと3発ごとの節目台詞の確認がタイムアウト");
                         return;
                     }
-                    if (_controller.attackLineText != null && _controller.attackLineText.gameObject.activeSelf)
+
+                    if (!_waitingForThresholdLine)
                     {
-                        Debug.Log("[SmokeTest] 攻撃セリフ表示を確認: " + _controller.attackLineText.text);
-                        SetState(State.FiringBullet);
+                        _controller.enemy.TakeDamage();
+                        _damageStep++;
+                        float expectedRatio = (12 - _damageStep) / 12f;
+                        if (_hud != null && Mathf.Abs(_hud.EnemyHealthRatio - expectedRatio) > 0.001f)
+                        {
+                            Fail($"怒りへの命中が体力ゲージに反映されません: expected={expectedRatio}, actual={_hud.EnemyHealthRatio}");
+                            return;
+                        }
+                        if (_damageStep >= 12)
+                        {
+                            SetState(State.WaitingBattleEnd);
+                            break;
+                        }
+                        if (_damageStep % 3 == 0)
+                        {
+                            _waitingForThresholdLine = true;
+                            _thresholdLineObserved = false;
+                        }
+                        break;
                     }
-                    break;
 
-                case State.FiringBullet:
-                    // 弾がすぐ命中するよう敵をbulletSpawnPointのすぐ隣へ動かす（テスト時間短縮のみが目的）
-                    _controller.enemy.transform.position = _controller.bulletSpawnPoint.position + Vector3.right * 1.0f;
-                    Debug.Log($"[SmokeTest] Enemy位置={_controller.enemy.transform.position}, BulletSpawn位置={_controller.bulletSpawnPoint.position}");
-
-                    _controller.enemy.OnDefeated += OnEnemyDefeatedDiagnostic;
-
-                    var method = typeof(AngerBattleController).GetMethod("FireDenialBullet", BindingFlags.NonPublic | BindingFlags.Instance);
-                    if (method == null)
+                    bool lineVisible = _controller.attackLineText != null && _controller.attackLineText.gameObject.activeSelf;
+                    if (lineVisible)
                     {
-                        Fail("FireDenialBulletメソッドが見つかりません（リフレクション）");
-                        return;
+                        int phaseIndex = _damageStep / 3 - 1;
+                        string expectedBody = _controller.thresholdLines[phaseIndex].Replace("怒り: ", string.Empty);
+                        if (_controller.attackLineText.text != expectedBody)
+                        {
+                            Fail($"節目{_damageStep}の台詞が不一致です: {_controller.attackLineText.text}");
+                            return;
+                        }
+                        _thresholdLineObserved = true;
                     }
-                    Debug.Log("[SmokeTest] FireDenialBulletを呼び出します（Enterキー押下相当）");
-                    method.Invoke(_controller, null);
-                    SetState(State.WaitingBattleEnd);
+                    else if (_thresholdLineObserved)
+                    {
+                        Debug.Log($"[SmokeTest] {_damageStep}/12減少時の台詞とフェーズ移行を確認");
+                        _waitingForThresholdLine = false;
+                    }
                     break;
 
                 case State.WaitingBattleEnd:
@@ -269,12 +316,12 @@ namespace AngerBattle.EditorTools
                     }
                     if (now - _stateStartTime > StateTimeoutSeconds)
                     {
-                        Fail("弾命中後、戦闘終了待ちがタイムアウト（当たり判定/Rigidbody2D設定を確認）");
+                        Fail("4HPを削った後の戦闘終了待ちがタイムアウト");
                         return;
                     }
                     if (!_launcher.battleRoot.activeSelf)
                     {
-                        Debug.Log("[SmokeTest] 弾命中→撃破→戦闘終了（AngerBattleRoot非アクティブ化）を確認");
+                        Debug.Log("[SmokeTest] 12HP撃破→戦闘終了（AngerBattleRoot非アクティブ化）を確認");
                         Succeed();
                     }
                     break;

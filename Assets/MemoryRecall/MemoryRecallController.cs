@@ -51,6 +51,8 @@ namespace MemoryRecall
 
         [Header("インタラクション")]
         public float interactRange = 1.5f;
+        [Tooltip("お母さんの見た目の端から会話可能になる距離")]
+        public float motherInteractRange = 2.25f;
 
         [Header("夕方の曲")]
         public AudioSource eveningChimeSource;
@@ -114,6 +116,26 @@ namespace MemoryRecall
                 return;
             }
 
+            // 出入口は会話対象ではないため、そこまで歩いた時点で自然にマップを切り替える。
+            // 特に室内は画面下中央の張り出した通路が出口になる。
+            if (phase == RecallPhase.LeavingHome && mapEnvironment.IsAtHomeExit(player.transform))
+            {
+                Debug.Log("[MemoryRecall] 室内下中央の出口に到達。屋外へ切り替えます。", this);
+                mapEnvironment.ShowOutdoor(player, true);
+                phase = RecallPhase.VisitingFriends;
+                return;
+            }
+
+            // 夕方の曲が鳴り始めた時点でhomeUnlockedが立つ。
+            // 曲の終了は待たず、その状態で玄関領域へ歩けば室内へ戻れる。
+            if (phase == RecallPhase.ReturningHome && homeUnlocked &&
+                mapEnvironment.IsAtOutdoorHomeEntrance(player.transform))
+            {
+                mapEnvironment.ShowHome(player, true);
+                phase = RecallPhase.FinalHome;
+                return;
+            }
+
             if (!Input.GetKeyDown(KeyCode.Space))
             {
                 return;
@@ -122,11 +144,6 @@ namespace MemoryRecall
             switch (phase)
             {
                 case RecallPhase.LeavingHome:
-                    if (IsPlayerNear(mapEnvironment.homeDoor))
-                    {
-                        mapEnvironment.ShowOutdoor(player, true);
-                        phase = RecallPhase.VisitingFriends;
-                    }
                     break;
 
                 case RecallPhase.VisitingFriends:
@@ -138,15 +155,10 @@ namespace MemoryRecall
                     break;
 
                 case RecallPhase.ReturningHome:
-                    if (homeUnlocked && IsPlayerNear(mapEnvironment.outdoorDoor))
-                    {
-                        mapEnvironment.ShowHome(player, true);
-                        phase = RecallPhase.FinalHome;
-                    }
                     break;
 
                 case RecallPhase.FinalHome:
-                    if (IsPlayerNear(motherTransform))
+                    if (IsPlayerNear(motherTransform, motherInteractRange))
                     {
                         StartCoroutine(RunEnding());
                     }
@@ -206,7 +218,7 @@ namespace MemoryRecall
             foreach (MapCharacter friend in friends)
             {
                 if (friend.hasTalked || friend.npcTransform == null) continue;
-                float distance = Vector2.Distance(player.transform.position, friend.npcTransform.position);
+                float distance = DistanceToVisibleActor(friend.npcTransform);
                 if (distance <= interactRange && distance < nearestDistance)
                 {
                     nearest = friend;
@@ -217,10 +229,25 @@ namespace MemoryRecall
             return nearest;
         }
 
-        private bool IsPlayerNear(Transform target)
+        private bool IsPlayerNear(Transform target, float range = -1f)
         {
+            float effectiveRange = range >= 0f ? range : interactRange;
             return target != null && mapEnvironment != null &&
-                   Vector2.Distance(player.transform.position, target.position) <= interactRange;
+                   DistanceToVisibleActor(target) <= effectiveRange;
+        }
+
+        private float DistanceToVisibleActor(Transform target)
+        {
+            if (target == null || player == null)
+            {
+                return float.MaxValue;
+            }
+
+            SpriteRenderer renderer = target.GetComponent<SpriteRenderer>();
+            Vector3 nearestPoint = renderer != null
+                ? renderer.bounds.ClosestPoint(player.transform.position)
+                : target.position;
+            return Vector2.Distance(player.transform.position, nearestPoint);
         }
 
         private IEnumerator ShowLineAndWaitForSpace(string text)

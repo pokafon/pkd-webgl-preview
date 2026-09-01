@@ -39,9 +39,7 @@ namespace BedFlight
         [Tooltip("BGM（湖面のワルツ）の再生を管理するコンポーネント（怒り戦・不安戦と同じBattleBGMを流用）")]
         public AngerBattle.BattleBGM bgm;
 
-        [Tooltip("ベッド（プレイヤー）の色。EnemySprite.pngを流用する設計だったが、" +
-            "後から怒り戦用に絵柄がトゲトゲの爆発形状へ差し替えられてしまい「ベッド」に見えなくなったため、" +
-            "実行時にこの色の単色矩形を生成して上書きする（既存素材の絵柄変更に影響されないようにする）")]
+        [Tooltip("ベッド（プレイヤー）の色。実行時に専用の単色矩形を生成する")]
         public Color bedColor = new Color(0.62f, 0.45f, 0.32f);
 
         [Header("セリフ表示（現実パートと同じ見た目、任意）")]

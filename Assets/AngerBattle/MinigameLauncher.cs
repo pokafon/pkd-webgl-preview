@@ -133,7 +133,7 @@ namespace AngerBattle
         public string[] debugMinigames = new string[] { "IkariBattle", "FuanBattle", "BedFlight", "MemoryRecall", "SadnessBattle" };
 
         [Tooltip("「ミニゲーム単体起動」ボタンで戦闘が終わった後、自動でジャンプする次の現実パートのYarnノード名")]
-        public string[] debugMinigameNextNodes = new string[] { "Anxiety", "Escape", "Ending" };
+        public string[] debugMinigameNextNodes = new string[] { "Anxiety", "Escape", "Sadness" };
 
         private DialogueRunner debugDialogueRunner;
         private bool debugMenuVisible = false;
@@ -290,9 +290,8 @@ namespace AngerBattle
         }
 
         /// <summary>
-        /// 記憶回想（子供のころの記憶を想起する2Dマップ探索）。
-        /// 怒り戦・不安戦のような「精神世界パートへの入退室」演出（ClockGlitchIntro/GoodMorningOutro）は使わない
-        /// （本編との接続位置がまだ未定のため、演出の前後関係も未確定）。
+        /// 記憶回想（子供のころの記憶を想起する2Dマップ探索）。`Sadness.yarn`から起動される。
+        /// 怒り戦・不安戦のような「精神世界パートへの入退室」演出（ClockGlitchIntro/GoodMorningOutro）は使わない。
         /// </summary>
         private Task RunMemoryRecall()
         {
@@ -302,7 +301,7 @@ namespace AngerBattle
         /// <summary>
         /// 記憶回想 悲しみコンタックバトル。怒り戦・不安戦と同じ弾撃ちの仕組みを流用しつつ、
         /// プレイヤー＝コンタックを操作してお母さん・友達を順番に撃破する（悲しみと決別するため）。
-        /// こちらも本編との接続位置が未定のため、入退室演出は使わない。
+        /// `Sadness.yarn`から起動される。入退室演出（ClockGlitchIntro/GoodMorningOutro）は使わない。
         /// </summary>
         private Task RunSadnessBattle()
         {
@@ -531,22 +530,6 @@ namespace AngerBattle
             }
             var tcs = new TaskCompletionSource<bool>();
             StartCoroutine(RunLevelUpBeatCoroutine(fuanBattleController.ShowLevelUpLineAndWait(), tcs));
-            await tcs.Task;
-        }
-
-        /// <summary>撃破直後のレベルアップ演出（悲しみコンタックバトル）。レベルアップ音＋一言を表示してスペースキーで読み進める。</summary>
-        private async Task PlaySadnessLevelUpBeat()
-        {
-            if (goodMorningOutro != null)
-            {
-                goodMorningOutro.PlaySound(levelUpClip);
-            }
-            if (sadnessBattleController == null)
-            {
-                return;
-            }
-            var tcs = new TaskCompletionSource<bool>();
-            StartCoroutine(RunLevelUpBeatCoroutine(sadnessBattleController.ShowLevelUpLineAndWait(), tcs));
             await tcs.Task;
         }
 

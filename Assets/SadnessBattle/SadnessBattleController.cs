@@ -60,9 +60,6 @@ namespace SadnessBattle
         public TMP_Text characterNameText;
         public GameObject lineBackground;
 
-        // 旧MinigameLauncherとの互換用。悲しみ戦ではfinalLineを内部表示するため空文字にする。
-        [HideInInspector] public string levelUpLine = string.Empty;
-
         private BattlePhase phase;
         private bool isBusy;
         private bool currentTargetDefeated;
@@ -271,12 +268,6 @@ namespace SadnessBattle
         private void HandleTargetDefeated()
         {
             currentTargetDefeated = true;
-        }
-
-        public IEnumerator ShowLevelUpLineAndWait()
-        {
-            if (string.IsNullOrEmpty(levelUpLine)) yield break;
-            yield return ShowLineAndWaitForSpace(levelUpLine);
         }
 
         private IEnumerator ShowLineAndWaitForSpace(string text)

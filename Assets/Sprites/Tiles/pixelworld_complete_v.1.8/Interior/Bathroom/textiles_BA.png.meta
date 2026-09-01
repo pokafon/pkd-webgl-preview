@@ -1,0 +1,728 @@
+fileFormatVersion: 2
+guid: 822c50dcef7223c438cedef030b39694
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -2800912671280268407
+    second: textiles_BA_0
+  - first:
+      213: -872130717959478384
+    second: textiles_BA_1
+  - first:
+      213: -3857796853420315707
+    second: textiles_BA_2
+  - first:
+      213: 1878537020568647948
+    second: textiles_BA_3
+  - first:
+      213: 7573457744704402845
+    second: textiles_BA_4
+  - first:
+      213: 675437607234129541
+    second: textiles_BA_5
+  - first:
+      213: -200510938931597450
+    second: textiles_BA_6
+  - first:
+      213: 6283282521190093240
+    second: textiles_BA_7
+  - first:
+      213: 3674337915641569117
+    second: textiles_BA_8
+  - first:
+      213: -3175286375287012613
+    second: textiles_BA_9
+  - first:
+      213: 581259943083650691
+    second: textiles_BA_10
+  - first:
+      213: 2330759057805894258
+    second: textiles_BA_11
+  - first:
+      213: -2094706488535546175
+    second: textiles_BA_12
+  - first:
+      213: 5579009466356109701
+    second: textiles_BA_13
+  - first:
+      213: -1644797877656236619
+    second: textiles_BA_14
+  - first:
+      213: 7092551907999429950
+    second: textiles_BA_15
+  - first:
+      213: -3439974462433273895
+    second: textiles_BA_16
+  - first:
+      213: -667506795158525516
+    second: textiles_BA_17
+  - first:
+      213: -5919236767968028174
+    second: textiles_BA_18
+  - first:
+      213: 384161512812471240
+    second: textiles_BA_19
+  - first:
+      213: 6121147709637237099
+    second: textiles_BA_20
+  - first:
+      213: 8751121627530822549
+    second: textiles_BA_21
+  - first:
+      213: -8923464933129808698
+    second: textiles_BA_22
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 16
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: textiles_BA_0
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 137
+        width: 34
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 98bf27de3c82129d0800000000000000
+      internalID: -2800912671280268407
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_1
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 141
+        width: 34
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 093a1569bb195e3f0800000000000000
+      internalID: -872130717959478384
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_2
+      rect:
+        serializedVersion: 2
+        x: 111
+        y: 137
+        width: 34
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5cb2348833a567ac0800000000000000
+      internalID: -3857796853420315707
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_3
+      rect:
+        serializedVersion: 2
+        x: 159
+        y: 141
+        width: 34
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c093a60a777e11a10800000000000000
+      internalID: 1878537020568647948
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_4
+      rect:
+        serializedVersion: 2
+        x: 207
+        y: 137
+        width: 34
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d95798261b35a1960800000000000000
+      internalID: 7573457744704402845
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_5
+      rect:
+        serializedVersion: 2
+        x: 255
+        y: 141
+        width: 34
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 58e4127dce2af5900800000000000000
+      internalID: 675437607234129541
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_6
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 91
+        width: 66
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 67fe6670d54a73df0800000000000000
+      internalID: -200510938931597450
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_7
+      rect:
+        serializedVersion: 2
+        x: 56
+        y: 121
+        width: 34
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8b1d4faa924b23750800000000000000
+      internalID: 6283282521190093240
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_8
+      rect:
+        serializedVersion: 2
+        x: 111
+        y: 91
+        width: 66
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d5f9096eddeddf230800000000000000
+      internalID: 3674337915641569117
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_9
+      rect:
+        serializedVersion: 2
+        x: 152
+        y: 121
+        width: 34
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf241e47ddd1fe3d0800000000000000
+      internalID: -3175286375287012613
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_10
+      rect:
+        serializedVersion: 2
+        x: 207
+        y: 91
+        width: 66
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 38e2aada6dc011800800000000000000
+      internalID: 581259943083650691
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_11
+      rect:
+        serializedVersion: 2
+        x: 248
+        y: 121
+        width: 34
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2726b81a305885020800000000000000
+      internalID: 2330759057805894258
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_12
+      rect:
+        serializedVersion: 2
+        x: 21
+        y: 29
+        width: 44
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1c602220c8b1ee2e0800000000000000
+      internalID: -2094706488535546175
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_13
+      rect:
+        serializedVersion: 2
+        x: 69
+        y: 29
+        width: 44
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 58192b00d8f9c6d40800000000000000
+      internalID: 5579009466356109701
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_14
+      rect:
+        serializedVersion: 2
+        x: 117
+        y: 29
+        width: 44
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5bdcbf67b018c29e0800000000000000
+      internalID: -1644797877656236619
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_15
+      rect:
+        serializedVersion: 2
+        x: 175
+        y: 41
+        width: 18
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e353353e16ecd6260800000000000000
+      internalID: 7092551907999429950
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_16
+      rect:
+        serializedVersion: 2
+        x: 191
+        y: 49
+        width: 18
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9d7df32c371c240d0800000000000000
+      internalID: -3439974462433273895
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_17
+      rect:
+        serializedVersion: 2
+        x: 207
+        y: 41
+        width: 18
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4b9aa6d3b1a8cb6f0800000000000000
+      internalID: -667506795158525516
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_18
+      rect:
+        serializedVersion: 2
+        x: 223
+        y: 49
+        width: 18
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2f995df5585aadda0800000000000000
+      internalID: -5919236767968028174
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_19
+      rect:
+        serializedVersion: 2
+        x: 239
+        y: 41
+        width: 18
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8c3609b4cd0d45500800000000000000
+      internalID: 384161512812471240
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_20
+      rect:
+        serializedVersion: 2
+        x: 255
+        y: 49
+        width: 18
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b699f92296fa2f450800000000000000
+      internalID: 6121147709637237099
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_21
+      rect:
+        serializedVersion: 2
+        x: 271
+        y: 41
+        width: 18
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 593863b31ca327970800000000000000
+      internalID: 8751121627530822549
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: textiles_BA_22
+      rect:
+        serializedVersion: 2
+        x: 287
+        y: 49
+        width: 18
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6c4942ffbeb792480800000000000000
+      internalID: -8923464933129808698
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      textiles_BA_0: -2800912671280268407
+      textiles_BA_1: -872130717959478384
+      textiles_BA_10: 581259943083650691
+      textiles_BA_11: 2330759057805894258
+      textiles_BA_12: -2094706488535546175
+      textiles_BA_13: 5579009466356109701
+      textiles_BA_14: -1644797877656236619
+      textiles_BA_15: 7092551907999429950
+      textiles_BA_16: -3439974462433273895
+      textiles_BA_17: -667506795158525516
+      textiles_BA_18: -5919236767968028174
+      textiles_BA_19: 384161512812471240
+      textiles_BA_2: -3857796853420315707
+      textiles_BA_20: 6121147709637237099
+      textiles_BA_21: 8751121627530822549
+      textiles_BA_22: -8923464933129808698
+      textiles_BA_3: 1878537020568647948
+      textiles_BA_4: 7573457744704402845
+      textiles_BA_5: 675437607234129541
+      textiles_BA_6: -200510938931597450
+      textiles_BA_7: 6283282521190093240
+      textiles_BA_8: 3674337915641569117
+      textiles_BA_9: -3175286375287012613
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
