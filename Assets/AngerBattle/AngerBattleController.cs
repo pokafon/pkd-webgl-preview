@@ -37,6 +37,15 @@ namespace AngerBattle
         public Sprite playerBattleSprite;
         [Tooltip("未設定ならResources/AngerBattle/AngerVerticalを読み込む")]
         public Sprite enemyBattleSprite;
+        [Tooltip("プレイヤーと怒り本体の描画順")]
+        public int combatantSortingOrder = 10;
+        [Tooltip("怒りが放つ赤い弾の描画順")]
+        public int enemyBulletSortingOrder = 20;
+        [Tooltip("コンタックが放つ青い弾の描画順")]
+        public int playerBulletSortingOrder = 21;
+        [Tooltip("カメラから表示範囲を取得できない場合に使う移動範囲")]
+        public Vector2 fallbackPlayerMinBounds = new Vector2(-4.6f, -4.6f);
+        public Vector2 fallbackPlayerMaxBounds = new Vector2(4.6f, 4.6f);
 
         [Header("HPと節目の台詞")]
         public int enemyMaxHealth = 12;
@@ -54,6 +63,8 @@ namespace AngerBattle
 
         [Header("コンタックの青い弾")]
         public float playerShotCooldown = 0.16f;
+        [Tooltip("コンタック中心から青い弾を出す相対位置")]
+        public Vector3 playerBulletSpawnOffset = new Vector3(0f, 0.7f, 0f);
         public Color playerBulletColor = new Color(0.15f, 0.72f, 1f, 1f);
         [Tooltip("見た目より小さくするコンタック中心の当たり判定半径")]
         public float playerCollisionRadius = 0.20f;
@@ -107,6 +118,12 @@ namespace AngerBattle
         public Color contactFlashColor = new Color(1f, 0.2f, 0.18f, 1f);
         [Tooltip("接触時にプレイヤーを一瞬だけ膨らませる倍率")]
         public float contactPunchScale = 1.08f;
+        [Tooltip("怒りが青い弾を受けた時の点滅・揺れ時間")]
+        public float enemyHitEffectDuration = 0.14f;
+        public float enemyHitShakeStrength = 0.07f;
+        [Tooltip("1なら拡大なし。0.055なら最大約5.5%拡大")]
+        public float enemyHitPunchAmount = 0.055f;
+        public float enemyHitFlashBrightness = 0.8f;
 
         private bool battleDefeated = false;
         private Action onBattleFinished;
@@ -493,7 +510,7 @@ namespace AngerBattle
             SpriteRenderer renderer = bullet.GetComponent<SpriteRenderer>();
             renderer.sprite = GetRuntimeBulletSprite();
             renderer.color = enemyBulletColor;
-            renderer.sortingOrder = 20;
+            renderer.sortingOrder = enemyBulletSortingOrder;
 
             Rigidbody2D body = bullet.GetComponent<Rigidbody2D>();
             body.bodyType = RigidbodyType2D.Kinematic;
@@ -673,17 +690,19 @@ namespace AngerBattle
             enemyRenderer = enemy.GetComponentInChildren<SpriteRenderer>();
             Vector3 basePosition = enemy.transform.localPosition;
             float elapsed = 0f;
-            const float duration = 0.14f;
+            float duration = Mathf.Max(0.01f, enemyHitEffectDuration);
             while (elapsed < duration)
             {
                 elapsed += Time.unscaledDeltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
                 float envelope = 1f - t;
-                enemy.transform.localPosition = basePosition + (Vector3)(UnityEngine.Random.insideUnitCircle * 0.07f * envelope);
-                enemy.transform.localScale = enemyBattleScale * (1f + Mathf.Sin(t * Mathf.PI) * 0.055f);
+                enemy.transform.localPosition = basePosition +
+                    (Vector3)(UnityEngine.Random.insideUnitCircle * Mathf.Max(0f, enemyHitShakeStrength) * envelope);
+                enemy.transform.localScale = enemyBattleScale *
+                    (1f + Mathf.Sin(t * Mathf.PI) * Mathf.Max(0f, enemyHitPunchAmount));
                 if (enemyRenderer != null)
                 {
-                    float brightness = 1f + envelope * 0.8f;
+                    float brightness = 1f + envelope * Mathf.Max(0f, enemyHitFlashBrightness);
                     enemyRenderer.color = new Color(brightness, brightness, brightness, 1f);
                 }
                 yield return null;
@@ -856,7 +875,7 @@ namespace AngerBattle
                 return;
             }
 
-            Vector3 spawnPos = player.transform.position + Vector3.up * 0.7f;
+            Vector3 spawnPos = player.transform.position + playerBulletSpawnOffset;
             if (bulletSpawnPoint != null)
             {
                 bulletSpawnPoint.position = spawnPos;
@@ -872,7 +891,7 @@ namespace AngerBattle
             {
                 renderer.sprite = GetRuntimeBulletSprite();
                 renderer.color = playerBulletColor;
-                renderer.sortingOrder = 21;
+                renderer.sortingOrder = playerBulletSortingOrder;
             }
         }
 
@@ -927,7 +946,7 @@ namespace AngerBattle
             {
                 playerRenderer.sprite = playerBattleSprite;
                 playerRenderer.color = Color.white;
-                playerRenderer.sortingOrder = 10;
+                playerRenderer.sortingOrder = combatantSortingOrder;
             }
             if (enemyBattleSprite != null)
             {
@@ -941,6 +960,10 @@ namespace AngerBattle
             enemy.transform.localScale = enemyBattleScale;
             enemyHomePosition = enemy.transform.localPosition;
             enemyRenderer = enemy.GetComponentInChildren<SpriteRenderer>();
+            if (enemyRenderer != null)
+            {
+                enemyRenderer.sortingOrder = combatantSortingOrder;
+            }
 
             Camera battleCamera = Camera.main;
             if (battleCamera != null && battleCamera.orthographic && playerRenderer != null)
@@ -967,8 +990,8 @@ namespace AngerBattle
             }
             else
             {
-                player.minBounds = new Vector2(-4.6f, -4.6f);
-                player.maxBounds = new Vector2(4.6f, 4.6f);
+                player.minBounds = fallbackPlayerMinBounds;
+                player.maxBounds = fallbackPlayerMaxBounds;
             }
         }
 

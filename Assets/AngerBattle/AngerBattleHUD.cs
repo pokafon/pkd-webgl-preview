@@ -12,6 +12,31 @@ namespace AngerBattle
         private static readonly Color EnemyBaseColor = new Color(0.92f, 0.08f, 0.1f, 1f);
         private static readonly Color PlayerBaseColor = new Color(0.08f, 0.58f, 0.95f, 1f);
 
+        [Header("Canvas・解像度")]
+        [Tooltip("HUD全体の描画順")]
+        public int canvasSortingOrder = -5;
+        public Vector2 referenceResolution = new Vector2(1920f, 1080f);
+        [Range(0f, 1f)] public float matchWidthOrHeight = 0.5f;
+
+        [Header("HPゲージ・ラベル配置")]
+        public Vector2 enemyBarPosition = new Vector2(330f, -42f);
+        public Vector2 enemyLabelPosition = new Vector2(330f, -78f);
+        public Vector2 playerBarPosition = new Vector2(-330f, 42f);
+        public Vector2 playerLabelPosition = new Vector2(-330f, 78f);
+        public Vector2 healthBarSize = new Vector2(560f, 28f);
+        public Vector2 labelSize = new Vector2(720f, 48f);
+        public float labelFontSize = 25f;
+        public Vector2 retryTextPosition = Vector2.zero;
+        public float retryFontSize = 44f;
+
+        [Header("HUD演出")]
+        [Min(1)] public int deathFragmentCount = 18;
+        [Min(0.01f)] public float deathEffectDuration = 0.7f;
+        [Range(0f, 1f)] public float deathFadeAlpha = 0.78f;
+        [Min(0f)] public float deathFragmentGravity = 720f;
+        [Min(0.01f)] public float barFlashDuration = 0.08f;
+        [Min(0.01f)] public float phasePulseDuration = 0.55f;
+
         [SerializeField, HideInInspector] private Canvas canvas;
         [SerializeField, HideInInspector] private Image enemyFill;
         [SerializeField, HideInInspector] private Image playerFill;
@@ -37,14 +62,14 @@ namespace AngerBattle
             if (canvas == null) canvas = gameObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.overrideSorting = true;
-            canvas.sortingOrder = -5;
+            canvas.sortingOrder = canvasSortingOrder;
 
             CanvasScaler scaler = gameObject.GetComponent<CanvasScaler>();
             if (scaler == null) scaler = gameObject.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.referenceResolution = referenceResolution;
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
+            scaler.matchWidthOrHeight = matchWidthOrHeight;
 
             RectTransform root = GetComponent<RectTransform>();
             if (root == null) root = gameObject.AddComponent<RectTransform>();
@@ -56,13 +81,13 @@ namespace AngerBattle
             pulseOverlay = CreateImage(root, "PhasePulse", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.8f, 0f, 0f, 0f));
             fadeOverlay = CreateImage(root, "DeathFade", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0f, 0f, 0f, 0f));
 
-            CreateBar(root, "AngerHealth", new Vector2(0f, 1f), new Vector2(330f, -42f), EnemyBaseColor, out enemyFill, out enemyFillRect);
-            CreateLabel(root, "AngerLabel", "怒り", new Vector2(0f, 1f), new Vector2(330f, -78f), textTemplate);
-            CreateBar(root, "ContackHealth", new Vector2(1f, 0f), new Vector2(-330f, 42f), PlayerBaseColor, out playerFill, out playerFillRect);
-            CreateLabel(root, "ContackLabel", "コンタック", new Vector2(1f, 0f), new Vector2(-330f, 78f), textTemplate);
+            CreateBar(root, "AngerHealth", new Vector2(0f, 1f), enemyBarPosition, EnemyBaseColor, out enemyFill, out enemyFillRect);
+            CreateLabel(root, "AngerLabel", "怒り", new Vector2(0f, 1f), enemyLabelPosition, textTemplate);
+            CreateBar(root, "ContackHealth", new Vector2(1f, 0f), playerBarPosition, PlayerBaseColor, out playerFill, out playerFillRect);
+            CreateLabel(root, "ContackLabel", "コンタック", new Vector2(1f, 0f), playerLabelPosition, textTemplate);
 
-            retryText = CreateLabel(root, "RetryText", "もう一度\nSPACE", new Vector2(0.5f, 0.5f), Vector2.zero, textTemplate);
-            retryText.fontSize = 44f;
+            retryText = CreateLabel(root, "RetryText", "もう一度\nSPACE", new Vector2(0.5f, 0.5f), retryTextPosition, textTemplate);
+            retryText.fontSize = retryFontSize;
             retryText.alignment = TextAlignmentOptions.Center;
             retryText.gameObject.SetActive(false);
             built = true;
@@ -115,7 +140,7 @@ namespace AngerBattle
             if (!built) yield break;
 
             playerFill.gameObject.SetActive(false);
-            const int fragmentCount = 18;
+            int fragmentCount = Mathf.Max(1, deathFragmentCount);
             Vector2[] velocities = new Vector2[fragmentCount];
             float[] spins = new float[fragmentCount];
             for (int i = 0; i < fragmentCount; i++)
@@ -134,7 +159,7 @@ namespace AngerBattle
             }
 
             float elapsed = 0f;
-            const float duration = 0.7f;
+            float duration = Mathf.Max(0.01f, deathEffectDuration);
             while (elapsed < duration)
             {
                 elapsed += Time.unscaledDeltaTime;
@@ -143,7 +168,7 @@ namespace AngerBattle
                 {
                     if (fragments[i] == null) continue;
                     RectTransform rect = (RectTransform)fragments[i].transform;
-                    velocities[i] += Vector2.down * 720f * Time.unscaledDeltaTime;
+                    velocities[i] += Vector2.down * Mathf.Max(0f, deathFragmentGravity) * Time.unscaledDeltaTime;
                     rect.anchoredPosition += velocities[i] * Time.unscaledDeltaTime;
                     rect.Rotate(0f, 0f, spins[i] * Time.unscaledDeltaTime);
                     Image image = fragments[i].GetComponent<Image>();
@@ -152,7 +177,7 @@ namespace AngerBattle
                     image.color = color;
                 }
                 Color fade = fadeOverlay.color;
-                fade.a = Mathf.Lerp(0f, 0.78f, t);
+                fade.a = Mathf.Lerp(0f, Mathf.Clamp01(deathFadeAlpha), t);
                 fadeOverlay.color = fade;
                 yield return null;
             }
@@ -171,14 +196,14 @@ namespace AngerBattle
         private IEnumerator FlashBar(Image image, Color baseColor)
         {
             image.color = Color.white;
-            yield return new WaitForSecondsRealtime(0.08f);
+            yield return new WaitForSecondsRealtime(Mathf.Max(0.01f, barFlashDuration));
             image.color = baseColor;
         }
 
         private IEnumerator PulseBackground(float peakAlpha)
         {
             float elapsed = 0f;
-            const float duration = 0.55f;
+            float duration = Mathf.Max(0.01f, phasePulseDuration);
             while (elapsed < duration)
             {
                 elapsed += Time.unscaledDeltaTime;
@@ -190,7 +215,7 @@ namespace AngerBattle
             pulseOverlay.color = new Color(0.8f, 0f, 0f, 0f);
         }
 
-        private static void CreateBar(
+        private void CreateBar(
             RectTransform parent,
             string name,
             Vector2 anchor,
@@ -199,7 +224,7 @@ namespace AngerBattle
             out Image fill,
             out RectTransform fillRect)
         {
-            Image background = CreateImage(parent, name, anchor, anchor, position, new Vector2(560f, 28f), new Color(0.035f, 0.035f, 0.045f, 0.94f));
+            Image background = CreateImage(parent, name, anchor, anchor, position, healthBarSize, new Color(0.035f, 0.035f, 0.045f, 0.94f));
             Image border = CreateImage(background.rectTransform, "Border", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(1f, 1f, 1f, 0.22f));
             border.rectTransform.offsetMin = new Vector2(-3f, -3f);
             border.rectTransform.offsetMax = new Vector2(3f, 3f);
@@ -247,7 +272,7 @@ namespace AngerBattle
             return image;
         }
 
-        private static TMP_Text CreateLabel(
+        private TMP_Text CreateLabel(
             RectTransform parent,
             string name,
             string text,
@@ -262,17 +287,74 @@ namespace AngerBattle
             rect.anchorMax = anchor;
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.anchoredPosition = position;
-            rect.sizeDelta = new Vector2(720f, 48f);
+            rect.sizeDelta = labelSize;
             TextMeshProUGUI label = go.GetComponent<TextMeshProUGUI>();
             label.text = text;
             label.font = template != null ? template.font : TMP_Settings.defaultFontAsset;
-            label.fontSize = 25f;
+            label.fontSize = labelFontSize;
             label.fontStyle = FontStyles.Bold;
             label.alignment = TextAlignmentOptions.Center;
             label.color = Color.white;
             label.raycastTarget = false;
             return label;
         }
+
+        [ContextMenu("Inspector設定をHUDへ反映")]
+        public void ApplyInspectorSettings()
+        {
+            if (canvas != null)
+            {
+                canvas.overrideSorting = true;
+                canvas.sortingOrder = canvasSortingOrder;
+            }
+
+            CanvasScaler scaler = GetComponent<CanvasScaler>();
+            if (scaler != null)
+            {
+                scaler.referenceResolution = referenceResolution;
+                scaler.matchWidthOrHeight = Mathf.Clamp01(matchWidthOrHeight);
+            }
+
+            ApplyBarLayout(enemyFillRect, enemyBarPosition);
+            ApplyBarLayout(playerFillRect, playerBarPosition);
+            ApplyLabelLayout("AngerLabel", enemyLabelPosition, labelFontSize);
+            ApplyLabelLayout("ContackLabel", playerLabelPosition, labelFontSize);
+            if (retryText != null)
+            {
+                retryText.rectTransform.anchoredPosition = retryTextPosition;
+                retryText.rectTransform.sizeDelta = labelSize;
+                retryText.fontSize = retryFontSize;
+            }
+        }
+
+        private void ApplyBarLayout(RectTransform fillRect, Vector2 position)
+        {
+            if (fillRect == null || fillRect.parent is not RectTransform barRect) return;
+            barRect.anchoredPosition = position;
+            barRect.sizeDelta = healthBarSize;
+        }
+
+        private void ApplyLabelLayout(string objectName, Vector2 position, float fontSize)
+        {
+            Transform labelTransform = transform.Find(objectName);
+            if (labelTransform == null) return;
+            RectTransform rect = labelTransform as RectTransform;
+            TMP_Text label = labelTransform.GetComponent<TMP_Text>();
+            if (rect != null)
+            {
+                rect.anchoredPosition = position;
+                rect.sizeDelta = labelSize;
+            }
+            if (label != null) label.fontSize = fontSize;
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode) return;
+            ApplyInspectorSettings();
+        }
+#endif
 
         private void ClearFragments()
         {
