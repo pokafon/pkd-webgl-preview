@@ -89,8 +89,7 @@ namespace BedFlight.EditorTools
                 throw new Exception($"弾の見た目に使う既存スプライトが見つかりません: {BulletSpritePathInAngerBattle}");
             }
 
-            var bedSprite = CreateRectSprite(SpritesDir + "/BedSprite.png", new Color(0.62f, 0.45f, 0.32f), new Color(0.35f, 0.24f, 0.16f));
-            var riderSprite = CreateCircleSprite(SpritesDir + "/RiderSprite.png", new Color(0.95f, 0.8f, 0.65f), new Color(0.55f, 0.4f, 0.3f));
+            var bedSprite = BedFlightBackdropInstaller.LoadFlyingBedSprite();
             var whiteSquareSprite = CreateFlatColorSprite(SpritesDir + "/WhiteSquare.png", Color.white);
 
             SceneHierarchyUtility.DestroyNamedObject(scene, "BedFlightRoot");
@@ -116,6 +115,10 @@ namespace BedFlight.EditorTools
             skyRenderer.sortingOrder = -10;
             cityScroller.sky = skyRenderer;
 
+            // 逃避行専用の街・雲・ベビーメリーを提供素材から構築する。
+            // 専用インストーラーと同じ処理を使い、ビルダー再実行後も背景演出が消えないようにする。
+            BedFlightBackdropInstaller.ApplyToScene(scene, root);
+
             // --- プレイヤー（ベッドに乗った主人公） ---
             var playerGO = new GameObject(
                 "FlyingBed",
@@ -125,8 +128,9 @@ namespace BedFlight.EditorTools
                 typeof(CircleCollider2D));
             playerGO.transform.SetParent(root.transform);
             playerGO.transform.position = new Vector3(-3f, 0f, 0f);
-            playerGO.transform.localScale = new Vector3(1.6f, 0.8f, 1f);
+            playerGO.transform.localScale = Vector3.one * 0.35f;
             playerGO.GetComponent<SpriteRenderer>().sprite = bedSprite;
+            playerGO.GetComponent<SpriteRenderer>().color = Color.white;
             var playerController = playerGO.GetComponent<AngerBattle.PlayerController>();
             var playerRb = playerGO.GetComponent<Rigidbody2D>();
             playerRb.bodyType = RigidbodyType2D.Dynamic;
@@ -135,14 +139,7 @@ namespace BedFlight.EditorTools
             playerRb.sleepMode = RigidbodySleepMode2D.NeverSleep;
             var playerCol = playerGO.GetComponent<CircleCollider2D>();
             playerCol.isTrigger = true;
-            playerCol.radius = 0.55f;
-
-            var riderGO = new GameObject("Rider", typeof(SpriteRenderer));
-            riderGO.transform.SetParent(playerGO.transform, false);
-            riderGO.transform.localPosition = new Vector3(0f, 0.55f, 0f);
-            riderGO.transform.localScale = new Vector3(0.4f, 0.8f, 1f);
-            riderGO.GetComponent<SpriteRenderer>().sprite = riderSprite;
-            riderGO.GetComponent<SpriteRenderer>().sortingOrder = 1;
+            playerCol.radius = 1.5f;
 
             // --- コンタック（追ってくる本体。見た目は怒り戦・不安戦のプレイヤーと同じ） ---
             var contacGO = new GameObject("Contack", typeof(SpriteRenderer), typeof(ContacChaser));

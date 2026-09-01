@@ -75,6 +75,7 @@ namespace MemoryRecall
             phase = RecallPhase.Intro;
             isBusy = false;
             homeUnlocked = false;
+            StopEveningChime();
 
             foreach (MapCharacter friend in friends)
             {
@@ -131,6 +132,7 @@ namespace MemoryRecall
             if (phase == RecallPhase.ReturningHome && homeUnlocked &&
                 mapEnvironment.IsAtOutdoorHomeEntrance(player.transform))
             {
+                StopEveningChime();
                 mapEnvironment.ShowHome(player, true);
                 phase = RecallPhase.FinalHome;
                 return;
@@ -186,6 +188,14 @@ namespace MemoryRecall
 
             if (player != null) player.enabled = true;
             isBusy = false;
+        }
+
+        private void StopEveningChime()
+        {
+            if (eveningChimeSource != null)
+            {
+                eveningChimeSource.Stop();
+            }
         }
 
         private IEnumerator RunEnding()

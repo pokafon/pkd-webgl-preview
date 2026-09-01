@@ -1,0 +1,1248 @@
+fileFormatVersion: 2
+guid: 8769d0e200a1eb44993aaf95324225b7
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 7545661602829820219
+    second: mati_ushiro_0
+  - first:
+      213: 8639229150504417946
+    second: mati_ushiro_1
+  - first:
+      213: 5078700942010276393
+    second: mati_ushiro_2
+  - first:
+      213: -8443992364780340206
+    second: mati_ushiro_3
+  - first:
+      213: 4879003914421585665
+    second: mati_ushiro_4
+  - first:
+      213: 3167516537310190513
+    second: mati_ushiro_5
+  - first:
+      213: -74238413044297558
+    second: mati_ushiro_6
+  - first:
+      213: -4352504268463127728
+    second: mati_ushiro_7
+  - first:
+      213: -542489741126694309
+    second: mati_ushiro_8
+  - first:
+      213: -1139994539341824590
+    second: mati_ushiro_9
+  - first:
+      213: -1168952586494727633
+    second: mati_ushiro_10
+  - first:
+      213: 4326350513220502862
+    second: mati_ushiro_11
+  - first:
+      213: 8407323875923851987
+    second: mati_ushiro_12
+  - first:
+      213: 5246020345905424963
+    second: mati_ushiro_13
+  - first:
+      213: 6190197602899329847
+    second: mati_ushiro_14
+  - first:
+      213: 564905339071933247
+    second: mati_ushiro_15
+  - first:
+      213: 5547847708629034994
+    second: mati_ushiro_16
+  - first:
+      213: 8695243213559179451
+    second: mati_ushiro_17
+  - first:
+      213: 64974410548882848
+    second: mati_ushiro_18
+  - first:
+      213: -2621379402132862570
+    second: mati_ushiro_19
+  - first:
+      213: -7601358894080637683
+    second: mati_ushiro_20
+  - first:
+      213: -960965831698326394
+    second: mati_ushiro_21
+  - first:
+      213: -6193662209634477545
+    second: mati_ushiro_22
+  - first:
+      213: -6319394311725909809
+    second: mati_ushiro_23
+  - first:
+      213: -2997692348521472543
+    second: mati_ushiro_24
+  - first:
+      213: 3515584412702399590
+    second: mati_ushiro_25
+  - first:
+      213: 5470395512920057060
+    second: mati_ushiro_26
+  - first:
+      213: 2496746327006112174
+    second: mati_ushiro_27
+  - first:
+      213: -2718545919543702872
+    second: mati_ushiro_28
+  - first:
+      213: 3405601540264326847
+    second: mati_ushiro_29
+  - first:
+      213: -7776710517908071606
+    second: mati_ushiro_30
+  - first:
+      213: 3699303154224299938
+    second: mati_ushiro_31
+  - first:
+      213: -6645668705086569093
+    second: mati_ushiro_32
+  - first:
+      213: -6665739583860598636
+    second: mati_ushiro_33
+  - first:
+      213: 1415258372672488602
+    second: mati_ushiro_34
+  - first:
+      213: -8460443725457988603
+    second: mati_ushiro_35
+  - first:
+      213: -7124159295774646399
+    second: mati_ushiro_36
+  - first:
+      213: -6403400620921212286
+    second: mati_ushiro_37
+  - first:
+      213: 2159949069444060714
+    second: mati_ushiro_38
+  - first:
+      213: 4656682275015316374
+    second: mati_ushiro_39
+  - first:
+      213: -1745964251904554280
+    second: mati_ushiro_40
+  - first:
+      213: 8792397326965302910
+    second: mati_ushiro_41
+  - first:
+      213: 8275173256666454772
+    second: mati_ushiro_42
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: mati_ushiro_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 92
+        width: 43
+        height: 95
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b31e9f7cf3397b860800000000000000
+      internalID: 7545661602829820219
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_1
+      rect:
+        serializedVersion: 2
+        x: 126
+        y: 93
+        width: 24
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a9af309c325b4e770800000000000000
+      internalID: 8639229150504417946
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_2
+      rect:
+        serializedVersion: 2
+        x: 292
+        y: 93
+        width: 24
+        height: 51
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 92ad6f0499b2b7640800000000000000
+      internalID: 5078700942010276393
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_3
+      rect:
+        serializedVersion: 2
+        x: 369
+        y: 93
+        width: 45
+        height: 94
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 21c3823bea9e0da80800000000000000
+      internalID: -8443992364780340206
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_4
+      rect:
+        serializedVersion: 2
+        x: 422
+        y: 93
+        width: 105
+        height: 184
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 107c6d8c534b5b340800000000000000
+      internalID: 4879003914421585665
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_5
+      rect:
+        serializedVersion: 2
+        x: 588
+        y: 93
+        width: 25
+        height: 51
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1bb9c8a228745fb20800000000000000
+      internalID: 3167516537310190513
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_6
+      rect:
+        serializedVersion: 2
+        x: 616
+        y: 93
+        width: 90
+        height: 166
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aa05ec18e8048fef0800000000000000
+      internalID: -74238413044297558
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_7
+      rect:
+        serializedVersion: 2
+        x: 670
+        y: 93
+        width: 23
+        height: 51
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 05342eaad6cc893c0800000000000000
+      internalID: -4352504268463127728
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_8
+      rect:
+        serializedVersion: 2
+        x: 747
+        y: 93
+        width: 45
+        height: 94
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5a89d56470b878f0800000000000000
+      internalID: -542489741126694309
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_9
+      rect:
+        serializedVersion: 2
+        x: 815
+        y: 118
+        width: 29
+        height: 66
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2bd35a4a10ded20f0800000000000000
+      internalID: -1139994539341824590
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_10
+      rect:
+        serializedVersion: 2
+        x: 917
+        y: 93
+        width: 74
+        height: 114
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f2a25b2e0db07cfe0800000000000000
+      internalID: -1168952586494727633
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_11
+      rect:
+        serializedVersion: 2
+        x: 993
+        y: 93
+        width: 46
+        height: 127
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e45465aaed84a0c30800000000000000
+      internalID: 4326350513220502862
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_12
+      rect:
+        serializedVersion: 2
+        x: 1113
+        y: 93
+        width: 7
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3daf9107580dca470800000000000000
+      internalID: 8407323875923851987
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_13
+      rect:
+        serializedVersion: 2
+        x: 1122
+        y: 93
+        width: 52
+        height: 129
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 34a2a22c5bb9dc840800000000000000
+      internalID: 5246020345905424963
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_14
+      rect:
+        serializedVersion: 2
+        x: 1262
+        y: 93
+        width: 20
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7330a4a3ceff7e550800000000000000
+      internalID: 6190197602899329847
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_15
+      rect:
+        serializedVersion: 2
+        x: 1369
+        y: 93
+        width: 49
+        height: 148
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f3baa13b962f6d700800000000000000
+      internalID: 564905339071933247
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_16
+      rect:
+        serializedVersion: 2
+        x: 1501
+        y: 93
+        width: 46
+        height: 94
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2f76cc4e81aedfc40800000000000000
+      internalID: 5547847708629034994
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_17
+      rect:
+        serializedVersion: 2
+        x: 1548
+        y: 93
+        width: 84
+        height: 139
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb822d322a5bba870800000000000000
+      internalID: 8695243213559179451
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_18
+      rect:
+        serializedVersion: 2
+        x: 1642
+        y: 94
+        width: 17
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0ada144d1e5d6e000800000000000000
+      internalID: 64974410548882848
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_19
+      rect:
+        serializedVersion: 2
+        x: 1693
+        y: 89
+        width: 48
+        height: 77
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 699485a825dfe9bd0800000000000000
+      internalID: -2621379402132862570
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_20
+      rect:
+        serializedVersion: 2
+        x: 1748
+        y: 94
+        width: 47
+        height: 126
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d05411c0c5c828690800000000000000
+      internalID: -7601358894080637683
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_21
+      rect:
+        serializedVersion: 2
+        x: 1824
+        y: 89
+        width: 24
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 68c5550eaa6f9a2f0800000000000000
+      internalID: -960965831698326394
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_22
+      rect:
+        serializedVersion: 2
+        x: 1871
+        y: 94
+        width: 54
+        height: 93
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 71ad9f72901bb0aa0800000000000000
+      internalID: -6193662209634477545
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_23
+      rect:
+        serializedVersion: 2
+        x: 1986
+        y: 89
+        width: 30
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc8f3f5ea500d48a0800000000000000
+      internalID: -6319394311725909809
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_24
+      rect:
+        serializedVersion: 2
+        x: 2020
+        y: 94
+        width: 16
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1ed987401be0666d0800000000000000
+      internalID: -2997692348521472543
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_25
+      rect:
+        serializedVersion: 2
+        x: 2067
+        y: 89
+        width: 45
+        height: 77
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 66cd601a56dd9c030800000000000000
+      internalID: 3515584412702399590
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_26
+      rect:
+        serializedVersion: 2
+        x: 2116
+        y: 89
+        width: 109
+        height: 167
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4e4ad705cbfbaeb40800000000000000
+      internalID: 5470395512920057060
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_27
+      rect:
+        serializedVersion: 2
+        x: 2310
+        y: 89
+        width: 90
+        height: 149
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea9e57b5e8936a220800000000000000
+      internalID: 2496746327006112174
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_28
+      rect:
+        serializedVersion: 2
+        x: 2364
+        y: 89
+        width: 27
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8aa8200c3e8c54ad0800000000000000
+      internalID: -2718545919543702872
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_29
+      rect:
+        serializedVersion: 2
+        x: 2445
+        y: 89
+        width: 45
+        height: 77
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb67af5ae80234f20800000000000000
+      internalID: 3405601540264326847
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_30
+      rect:
+        serializedVersion: 2
+        x: 2509
+        y: 97
+        width: 29
+        height: 66
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a4b9b0b9cf2931490800000000000000
+      internalID: -7776710517908071606
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_31
+      rect:
+        serializedVersion: 2
+        x: 2611
+        y: 89
+        width: 126
+        height: 110
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2af75087e90965330800000000000000
+      internalID: 3699303154224299938
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_32
+      rect:
+        serializedVersion: 2
+        x: 2809
+        y: 89
+        width: 63
+        height: 112
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b758262e587d5c3a0800000000000000
+      internalID: -6645668705086569093
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_33
+      rect:
+        serializedVersion: 2
+        x: 2960
+        y: 89
+        width: 20
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4989ab24a298e73a0800000000000000
+      internalID: -6665739583860598636
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_34
+      rect:
+        serializedVersion: 2
+        x: 3063
+        y: 89
+        width: 53
+        height: 131
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a948a88ddf104a310800000000000000
+      internalID: 1415258372672488602
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_35
+      rect:
+        serializedVersion: 2
+        x: 3199
+        y: 89
+        width: 127
+        height: 122
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 504e4edc147769a80800000000000000
+      internalID: -8460443725457988603
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_36
+      rect:
+        serializedVersion: 2
+        x: 3340
+        y: 89
+        width: 17
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 18f1e0cadd6e12d90800000000000000
+      internalID: -7124159295774646399
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_37
+      rect:
+        serializedVersion: 2
+        x: 3442
+        y: 89
+        width: 51
+        height: 110
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 282b97bdf0d8227a0800000000000000
+      internalID: -6403400620921212286
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_38
+      rect:
+        serializedVersion: 2
+        x: 3569
+        y: 89
+        width: 54
+        height: 77
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a2616291c3ea9fd10800000000000000
+      internalID: 2159949069444060714
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_39
+      rect:
+        serializedVersion: 2
+        x: 3711
+        y: 89
+        width: 23
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 69355226bdbdf9040800000000000000
+      internalID: 4656682275015316374
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_40
+      rect:
+        serializedVersion: 2
+        x: 3793
+        y: 73
+        width: 45
+        height: 126
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8dac2be63c615c7e0800000000000000
+      internalID: -1745964251904554280
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_41
+      rect:
+        serializedVersion: 2
+        x: 1490
+        y: 93
+        width: 8
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e766cd5e8ced40a70800000000000000
+      internalID: 8792397326965302910
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mati_ushiro_42
+      rect:
+        serializedVersion: 2
+        x: 3188
+        y: 89
+        width: 8
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4fa9a62bb3257d270800000000000000
+      internalID: 8275173256666454772
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      mati_ushiro_0: 7545661602829820219
+      mati_ushiro_1: 8639229150504417946
+      mati_ushiro_10: -1168952586494727633
+      mati_ushiro_11: 4326350513220502862
+      mati_ushiro_12: 8407323875923851987
+      mati_ushiro_13: 5246020345905424963
+      mati_ushiro_14: 6190197602899329847
+      mati_ushiro_15: 564905339071933247
+      mati_ushiro_16: 5547847708629034994
+      mati_ushiro_17: 8695243213559179451
+      mati_ushiro_18: 64974410548882848
+      mati_ushiro_19: -2621379402132862570
+      mati_ushiro_2: 5078700942010276393
+      mati_ushiro_20: -7601358894080637683
+      mati_ushiro_21: -960965831698326394
+      mati_ushiro_22: -6193662209634477545
+      mati_ushiro_23: -6319394311725909809
+      mati_ushiro_24: -2997692348521472543
+      mati_ushiro_25: 3515584412702399590
+      mati_ushiro_26: 5470395512920057060
+      mati_ushiro_27: 2496746327006112174
+      mati_ushiro_28: -2718545919543702872
+      mati_ushiro_29: 3405601540264326847
+      mati_ushiro_3: -8443992364780340206
+      mati_ushiro_30: -7776710517908071606
+      mati_ushiro_31: 3699303154224299938
+      mati_ushiro_32: -6645668705086569093
+      mati_ushiro_33: -6665739583860598636
+      mati_ushiro_34: 1415258372672488602
+      mati_ushiro_35: -8460443725457988603
+      mati_ushiro_36: -7124159295774646399
+      mati_ushiro_37: -6403400620921212286
+      mati_ushiro_38: 2159949069444060714
+      mati_ushiro_39: 4656682275015316374
+      mati_ushiro_4: 4879003914421585665
+      mati_ushiro_40: -1745964251904554280
+      mati_ushiro_41: 8792397326965302910
+      mati_ushiro_42: 8275173256666454772
+      mati_ushiro_5: 3167516537310190513
+      mati_ushiro_6: -74238413044297558
+      mati_ushiro_7: -4352504268463127728
+      mati_ushiro_8: -542489741126694309
+      mati_ushiro_9: -1139994539341824590
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

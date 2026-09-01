@@ -67,6 +67,9 @@ namespace AngerBattle
         [Tooltip("レベル3のカーテン弾速度")]
         public float curtainBulletSpeed = 4.2f;
         public float enemyBulletScale = 0.28f;
+        [Range(-1f, 1f)]
+        [Tooltip("怒りの見た目の中心から、半身の高さに対する発射位置。0.25で胸付近")]
+        public float enemyBulletOriginHeight = 0.25f;
         [Tooltip("HP段階0〜3の発射間隔")]
         public float[] phaseShotIntervals = new float[] { 0.90f, 0.78f, 0.95f, 0.55f };
         [Tooltip("レベル3のカーテン弾同士の横間隔")]
@@ -396,7 +399,7 @@ namespace AngerBattle
 
         private void FireEnemyPattern(int phase, int volley)
         {
-            Vector3 origin = enemy.transform.position + Vector3.down * 0.65f;
+            Vector3 origin = GetEnemyBulletOrigin();
             Vector2 aimed = player != null
                 ? ((Vector2)(player.transform.position - origin)).normalized
                 : Vector2.down;
@@ -427,6 +430,23 @@ namespace AngerBattle
                     }
                     break;
             }
+        }
+
+        private Vector3 GetEnemyBulletOrigin()
+        {
+            if (enemy == null) return Vector3.zero;
+
+            SpriteRenderer enemyRenderer = enemy.GetComponentInChildren<SpriteRenderer>();
+            if (enemyRenderer == null)
+            {
+                return enemy.transform.position;
+            }
+
+            Bounds bounds = enemyRenderer.bounds;
+            return new Vector3(
+                bounds.center.x,
+                bounds.center.y + bounds.extents.y * enemyBulletOriginHeight,
+                enemy.transform.position.z);
         }
 
         private void SpawnFan(Vector3 origin, Vector2 centerDirection, int count, float angleStep)

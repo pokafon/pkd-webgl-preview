@@ -67,6 +67,11 @@ namespace AngerBattle
         [Tooltip("撃破直後のレベルアップ演出（「頭が少しすっきりした」等）で鳴らす音（怒り戦・不安戦共通、任意）")]
         public AudioClip levelUpClip;
 
+        [Header("ゲーム全体の音量")]
+        [Range(0f, 1f)]
+        [Tooltip("すべてのBGM・SE・チャイムへ一括で掛ける音量。0.7で従来より約3割小さい")]
+        public float globalAudioVolume = 0.7f;
+
         [Tooltip("敵に攻撃が命中してから「Good Morning」演出が始まるまでに置く間（秒）。命中の余韻を作るため")]
         [Range(0f, 5f)]
         public float postDefeatPauseSeconds = 1.0f;
@@ -95,6 +100,7 @@ namespace AngerBattle
         private void Awake()
         {
             instance = this;
+            AudioListener.volume = Mathf.Clamp01(globalAudioVolume);
 
             if (dialogueUIRoot != null)
             {

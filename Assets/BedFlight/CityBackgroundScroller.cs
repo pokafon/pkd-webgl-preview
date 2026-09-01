@@ -5,8 +5,8 @@ namespace BedFlight
 {
     /// <summary>
     /// 「ベッドに乗って街の上を飛ぶ」感覚を出すための背景演出。
-    /// 空の色（開放感の指標）と、近景のビル・遠景の雲の2層パララックスを管理する。
-    /// 既製アセットは使わず、全て実行時にコードで生成した単色スプライトを使う。
+    /// 空の色（開放感の指標）と、近景の街・遠景の街・雲の3層パララックスを管理する。
+    /// 提供素材が設定されていればそれを使い、未設定なら従来の単色スプライトへフォールバックする。
     ///
     /// プレイヤー自身は画面内で上下左右に動くだけで前には進まないため（PlayerControllerと同じ方式）、
     /// 「飛んでいる」実感はこちらの背景スクロールだけで作る。
@@ -22,6 +22,24 @@ namespace BedFlight
         public Color openSkyColor = new Color(0.55f, 0.82f, 1f);
 
         private float openness = 0f;
+
+        [Header("提供された背景素材（3層パララックス）")]
+        [Tooltip("街の前景。横長の1枚絵を複製して継ぎ目なく流す")]
+        public Sprite foregroundCitySprite;
+        [Tooltip("街の後景。切り出された建物スプライトを並べて流す")]
+        public Sprite[] backgroundCitySprites;
+        [Tooltip("切り出された雲スプライト。極小のノイズ片はシーン構築時に除外する")]
+        public Sprite[] suppliedCloudSprites;
+        public float foregroundCitySpeed = 2.5f;
+        public float backgroundCitySpeed = 1.2f;
+        public float foregroundCityBaseY = -4.4f;
+        public float backgroundCityBaseY = -4.15f;
+        public float foregroundCityScale = 1f;
+        public Vector2 backgroundCityScaleRange = new Vector2(1.15f, 1.45f);
+        public int backgroundCityCount = 24;
+        public int foregroundSortingOrder = -3;
+        public int backgroundSortingOrder = -4;
+        public int suppliedCloudSortingOrder = -5;
 
         [Header("ビル（近景）")]
         public int buildingCount = 14;
@@ -43,6 +61,8 @@ namespace BedFlight
         [Header("スクロール範囲（ワールド座標）")]
         public float leftBound = -12f;
         public float rightBound = 12f;
+        [Tooltip("画面外で先に待機させる距離。横長画面でも画面内に突然生成されないようにする")]
+        public float offscreenPreloadPadding = 6f;
 
         [Header("除外ゾーン（この範囲にはビルを初期配置しない。任意）")]
         [Tooltip("HouseIntro（開始演出の家）とビルが重ならないようにするための設定。" +
@@ -53,7 +73,13 @@ namespace BedFlight
 
         private readonly List<Transform> buildings = new List<Transform>();
         private readonly List<Transform> clouds = new List<Transform>();
+        private readonly List<Transform> foregroundCity = new List<Transform>();
+        private readonly List<Transform> backgroundCity = new List<Transform>();
+        private readonly List<Transform> suppliedClouds = new List<Transform>();
         private Sprite whiteSquare;
+        private bool usingSuppliedArt;
+        private float suppliedLeftBound;
+        private float suppliedRightBound;
 
         void Awake()
         {
@@ -66,8 +92,17 @@ namespace BedFlight
                 sky.sprite = whiteSquare;
             }
 
-            SpawnLayer(clouds, cloudCount, "Cloud", -2);
-            SpawnLayer(buildings, buildingCount, "Building", -1);
+            usingSuppliedArt = HasCompleteSuppliedArt();
+            if (usingSuppliedArt)
+            {
+                CalculateSuppliedScrollBounds();
+                SpawnSuppliedArt();
+            }
+            else
+            {
+                SpawnLayer(clouds, cloudCount, "Cloud", -2);
+                SpawnLayer(buildings, buildingCount, "Building", -1);
+            }
             ApplySkyColor();
         }
 
@@ -77,8 +112,18 @@ namespace BedFlight
         void Update()
         {
             if (!scrolling) return;
-            Scroll(buildings, buildingSpeed);
-            Scroll(clouds, cloudSpeed);
+
+            if (usingSuppliedArt)
+            {
+                ScrollSuppliedLayer(foregroundCity, foregroundCitySpeed, false);
+                ScrollSuppliedLayer(backgroundCity, backgroundCitySpeed, false);
+                ScrollSuppliedLayer(suppliedClouds, cloudSpeed, true);
+            }
+            else
+            {
+                Scroll(buildings, buildingSpeed);
+                Scroll(clouds, cloudSpeed);
+            }
         }
 
         /// <summary>ビル・雲のスクロールを止める/再開する（クライマックスでプレイヤーが止まるのに合わせる用）。</summary>
@@ -134,6 +179,13 @@ namespace BedFlight
         {
             if (!hasBuildingExcludeZone) return;
 
+            // 提供素材の前景は途切れない横長画像なので、家の跡を埋める追加生成は不要。
+            if (usingSuppliedArt)
+            {
+                hasBuildingExcludeZone = false;
+                return;
+            }
+
             var go = new GameObject("Building_Fill", typeof(SpriteRenderer));
             go.transform.SetParent(transform, false);
             var sr = go.GetComponent<SpriteRenderer>();
@@ -158,6 +210,157 @@ namespace BedFlight
                 guard++;
             }
             return x;
+        }
+
+        private bool HasCompleteSuppliedArt()
+        {
+            return foregroundCitySprite != null &&
+                backgroundCitySprites != null && backgroundCitySprites.Length > 0 &&
+                suppliedCloudSprites != null && suppliedCloudSprites.Length > 0;
+        }
+
+        private void SpawnSuppliedArt()
+        {
+            SpawnForegroundCity();
+            SpawnBackgroundCity();
+            SpawnSuppliedClouds();
+        }
+
+        private void CalculateSuppliedScrollBounds()
+        {
+            suppliedLeftBound = leftBound;
+            suppliedRightBound = rightBound;
+
+            Camera targetCamera = Camera.main;
+            if (targetCamera == null || !targetCamera.orthographic) return;
+
+            float cameraHalfWidth = targetCamera.orthographicSize * targetCamera.aspect;
+            float padding = Mathf.Max(0f, offscreenPreloadPadding);
+            suppliedLeftBound = Mathf.Min(
+                suppliedLeftBound,
+                targetCamera.transform.position.x - cameraHalfWidth - padding);
+            suppliedRightBound = Mathf.Max(
+                suppliedRightBound,
+                targetCamera.transform.position.x + cameraHalfWidth + padding);
+        }
+
+        private void SpawnForegroundCity()
+        {
+            float width = foregroundCitySprite.bounds.size.x * foregroundCityScale;
+            if (width <= 0f) return;
+
+            float span = suppliedRightBound - suppliedLeftBound;
+            int count = Mathf.Max(2, Mathf.CeilToInt(span / width) + 2);
+            for (int i = 0; i < count; i++)
+            {
+                var go = CreateSuppliedSpriteObject(
+                    $"ForegroundCity{i}", foregroundCitySprite, foregroundSortingOrder);
+                go.transform.localScale = Vector3.one * foregroundCityScale;
+
+                float x = suppliedLeftBound + width * (i + 0.5f);
+                float y = foregroundCityBaseY +
+                    foregroundCitySprite.bounds.extents.y * foregroundCityScale;
+                go.transform.position = new Vector3(x, y, 0f);
+                foregroundCity.Add(go.transform);
+            }
+        }
+
+        private void SpawnBackgroundCity()
+        {
+            float baseSpan = Mathf.Max(0.01f, rightBound - leftBound);
+            float span = suppliedRightBound - suppliedLeftBound;
+            int count = Mathf.Max(
+                1,
+                Mathf.CeilToInt(backgroundCityCount * span / baseSpan));
+            for (int i = 0; i < count; i++)
+            {
+                Sprite sprite = backgroundCitySprites[i % backgroundCitySprites.Length];
+                if (sprite == null) continue;
+
+                var go = CreateSuppliedSpriteObject(
+                    $"BackgroundCity{i}", sprite, backgroundSortingOrder);
+                float scale = Random.Range(backgroundCityScaleRange.x, backgroundCityScaleRange.y);
+                go.transform.localScale = Vector3.one * scale;
+
+                float x = suppliedLeftBound + span * (i + 0.5f) / count;
+                float y = backgroundCityBaseY + sprite.bounds.extents.y * scale;
+                go.transform.position = new Vector3(x, y, 0f);
+                backgroundCity.Add(go.transform);
+            }
+        }
+
+        private void SpawnSuppliedClouds()
+        {
+            float baseSpan = Mathf.Max(0.01f, rightBound - leftBound);
+            float span = suppliedRightBound - suppliedLeftBound;
+            int count = Mathf.Max(1, Mathf.CeilToInt(cloudCount * span / baseSpan));
+            for (int i = 0; i < count; i++)
+            {
+                Sprite sprite = suppliedCloudSprites[i % suppliedCloudSprites.Length];
+                if (sprite == null) continue;
+
+                var go = CreateSuppliedSpriteObject(
+                    $"Cloud{i}", sprite, suppliedCloudSortingOrder);
+                float targetWidth = Random.Range(cloudWidthRange.x, cloudWidthRange.y);
+                float nativeWidth = Mathf.Max(0.01f, sprite.bounds.size.x);
+                float scale = targetWidth / nativeWidth;
+                go.transform.localScale = Vector3.one * scale;
+
+                float x = suppliedLeftBound + span * (i + Random.value) / count;
+                float y = Random.Range(cloudYRange.x, cloudYRange.y);
+                go.transform.position = new Vector3(x, y, 0f);
+                go.GetComponent<SpriteRenderer>().color = cloudColor;
+                suppliedClouds.Add(go.transform);
+            }
+        }
+
+        private GameObject CreateSuppliedSpriteObject(string objectName, Sprite sprite, int sortingOrder)
+        {
+            var go = new GameObject(objectName, typeof(SpriteRenderer));
+            go.transform.SetParent(transform, false);
+            var renderer = go.GetComponent<SpriteRenderer>();
+            renderer.sprite = sprite;
+            renderer.sortingOrder = sortingOrder;
+            return go;
+        }
+
+        private void ScrollSuppliedLayer(List<Transform> layer, float speed, bool randomizeY)
+        {
+            if (layer.Count == 0) return;
+
+            foreach (Transform item in layer)
+            {
+                Vector3 position = item.position;
+                position.x -= speed * Time.deltaTime;
+
+                float halfWidth = GetHalfWidth(item);
+                if (position.x + halfWidth < suppliedLeftBound)
+                {
+                    position.x = Mathf.Max(GetRightmostEdge(layer), suppliedRightBound) + halfWidth;
+                    if (randomizeY)
+                    {
+                        position.y = Random.Range(cloudYRange.x, cloudYRange.y);
+                    }
+                }
+
+                item.position = position;
+            }
+        }
+
+        private static float GetRightmostEdge(List<Transform> layer)
+        {
+            float rightmost = float.NegativeInfinity;
+            foreach (Transform item in layer)
+            {
+                rightmost = Mathf.Max(rightmost, item.position.x + GetHalfWidth(item));
+            }
+            return rightmost;
+        }
+
+        private static float GetHalfWidth(Transform item)
+        {
+            var renderer = item.GetComponent<SpriteRenderer>();
+            return renderer != null ? renderer.bounds.extents.x : 0f;
         }
 
         private void PlaceRandomly(Transform t, SpriteRenderer sr, string name)

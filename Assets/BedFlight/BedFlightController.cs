@@ -63,6 +63,10 @@ namespace BedFlight
         [Tooltip("開放フェーズの長さ（秒）。この間に空の色が徐々に明るく開けていく")]
         public float freedomDurationSeconds = 25f;
 
+        [Header("画面内の移動範囲")]
+        [Tooltip("ベッドと乗員を画面端から少しだけ離す余白（ワールド座標）")]
+        public float screenEdgeMargin = 0.15f;
+
         [Header("クライマックス（コンタック本登場〜一撃）")]
         [Tooltip("コンタックの定位置（本登場後にとどまる位置。左端から登場するため負の値）")]
         public Vector3 contacRestingPosition = new Vector3(-4f, 0f, 0f);
@@ -104,11 +108,13 @@ namespace BedFlight
                 // 「もう始まっている」と誤解される原因になっていたため。
                 player.enabled = false;
                 var bedSprite = player.GetComponent<SpriteRenderer>();
-                if (bedSprite != null)
+                if (bedSprite != null && bedSprite.sprite == null)
                 {
                     bedSprite.sprite = CreateSolidSquareSprite();
                     bedSprite.color = bedColor;
                 }
+
+                ConfigurePlayerScreenBounds();
 
                 if (houseIntro != null)
                 {
@@ -137,6 +143,50 @@ namespace BedFlight
             HideLine();
 
             StartCoroutine(RunSequence());
+        }
+
+        /// <summary>
+        /// 実際のカメラ表示範囲とベッド＋乗員の見た目から、画面全体を使える移動範囲を求める。
+        /// 固定値にしないことで、16:9だけでなく横長のGameビューでも右側まで移動できる。
+        /// </summary>
+        private void ConfigurePlayerScreenBounds()
+        {
+            if (player == null) return;
+
+            Camera targetCamera = Camera.main;
+            if (targetCamera == null || !targetCamera.orthographic) return;
+
+            SpriteRenderer[] renderers = player.GetComponentsInChildren<SpriteRenderer>(true);
+            if (renderers.Length == 0) return;
+
+            Bounds visualBounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+            {
+                visualBounds.Encapsulate(renderers[i].bounds);
+            }
+
+            Vector3 playerPosition = player.transform.position;
+            float halfHeight = targetCamera.orthographicSize;
+            float halfWidth = halfHeight * targetCamera.aspect;
+            float margin = Mathf.Max(0f, screenEdgeMargin);
+
+            float left = targetCamera.transform.position.x - halfWidth + margin;
+            float right = targetCamera.transform.position.x + halfWidth - margin;
+            float bottom = targetCamera.transform.position.y - halfHeight + margin;
+            float top = targetCamera.transform.position.y + halfHeight - margin;
+
+            Vector2 minimum = new Vector2(
+                left - (visualBounds.min.x - playerPosition.x),
+                bottom - (visualBounds.min.y - playerPosition.y));
+            Vector2 maximum = new Vector2(
+                right - (visualBounds.max.x - playerPosition.x),
+                top - (visualBounds.max.y - playerPosition.y));
+
+            if (minimum.x <= maximum.x && minimum.y <= maximum.y)
+            {
+                player.minBounds = minimum;
+                player.maxBounds = maximum;
+            }
         }
 
         private IEnumerator RunSequence()
