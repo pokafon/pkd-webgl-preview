@@ -17,8 +17,8 @@ namespace MemoryRecall.EditorTools
     {
         private const string ScenePath = "Assets/Scenes/SampleScene.unity";
         private const string FontPath = "Assets/Fonts/NotoSansJP SDF.asset";
-        private const string PlayerSpritePath = "Assets/Sprites/Tiles/pixelworld_complete_v.1.8/Characters/MaleCharacter/PNGs/M_idle_front-Sheet.png";
-        private const string PlayerSpriteName = "M_idle_front-Sheet_3";
+        private const string SadnessSpritePath = "Assets/SadnessBattle/Sprites/Sadness.png";
+        private const float SadnessMapScale = 0.28f;
         private const string MotherSpritePath = "Assets/Sprites/Tiles/pixelworld_complete_v.1.8/Characters/FemaleCharacter/PNGs/F_idle_left-Sheet.png";
         private const string MotherSpriteName = "F_idle_left-Sheet_3";
         private const string EveningChimePath = "Assets/Audio/夕焼け小焼け 防災行政無線チャイム 17時.mp3";
@@ -63,7 +63,7 @@ namespace MemoryRecall.EditorTools
             SadnessMapEnvironment environment = SadnessMapEditorUtility.EnsureEnvironment(scene);
 
             TMP_FontAsset font = RequireAsset<TMP_FontAsset>(FontPath);
-            Sprite playerSprite = RequireSpriteSubAsset(PlayerSpritePath, PlayerSpriteName);
+            Sprite sadnessSprite = RequireAsset<Sprite>(SadnessSpritePath);
             Sprite motherSprite = RequireSpriteSubAsset(MotherSpritePath, MotherSpriteName);
             AudioClip eveningChime = RequireAsset<AudioClip>(EveningChimePath);
 
@@ -91,11 +91,12 @@ namespace MemoryRecall.EditorTools
                 environment.outdoorFriendSpots[index].position = friends[index].transform.position;
             }
 
-            GameObject playerObject = new GameObject("ChildPlayer", typeof(SpriteRenderer), typeof(AngerBattle.PlayerController));
+            GameObject playerObject = new GameObject("SadnessPlayer", typeof(SpriteRenderer), typeof(AngerBattle.PlayerController));
             playerObject.transform.SetParent(root.transform);
             playerObject.transform.position = environment.homeStart.position;
+            playerObject.transform.localScale = Vector3.one * SadnessMapScale;
             SpriteRenderer playerRenderer = playerObject.GetComponent<SpriteRenderer>();
-            playerRenderer.sprite = playerSprite;
+            playerRenderer.sprite = sadnessSprite;
             playerRenderer.sortingOrder = 5;
             AngerBattle.PlayerController player = playerObject.GetComponent<AngerBattle.PlayerController>();
             player.speed = 5f;

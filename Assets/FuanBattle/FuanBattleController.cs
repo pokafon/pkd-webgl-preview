@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using PKD.Emotions;
 using TMPro;
 using UnityEngine;
 
@@ -324,18 +325,29 @@ namespace AngerBattle
             // --- 3b. 続けてコンタックの返しを表示。スペースで消すと、一拍待ってから自動で発射する ---
             yield return StartCoroutine(ShowLineAndWaitForSpace(attackLine));
 
-            yield return new WaitForSeconds(secondsPerBeat * beatsBeforeFire);
+            EmotionOutcome resolution = EmotionOutcome.Unresolved;
+            yield return StartCoroutine(EmotionResolutionFlow.Choose(
+                this,
+                EmotionKind.Anxiety,
+                enemy.transform,
+                attackLineText,
+                characterNameText,
+                lineBackground,
+                value => resolution = value));
 
-            FireDenialBullet();
-
-            // --- 4. 命中で撃破 ---
-            while (!battleDefeated)
+            if (resolution == EmotionOutcome.Eliminated)
             {
-                yield return null;
+                yield return new WaitForSeconds(secondsPerBeat * beatsBeforeFire);
+                FireDenialBullet();
+
+                // 命中で撃破
+                while (!battleDefeated)
+                {
+                    yield return null;
+                }
             }
 
             enemy.OnDefeated -= HandleEnemyDefeated;
-            // 撃破後は敵を白くするだけで、非表示にはしない
             HideLine();
 
             // --- 5. 不安戦終了 ---

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using MemoryRecall;
 using SadnessBattle;
@@ -23,8 +22,9 @@ namespace SadnessBattle.EditorTools
         private const string MotherSpriteName = "F_idle_left-Sheet_3";
         private const string BulletPrefabPath = "Assets/AngerBattle/Prefabs/DenialBulletPrefab.prefab";
         private const string EveningChimePath = "Assets/Audio/夕焼け小焼け 防災行政無線チャイム 17時.mp3";
-        private const string GeneratedSpritesDirectory = "Assets/SadnessBattle/Sprites";
-        private const string SadnessPlaceholderPath = GeneratedSpritesDirectory + "/SadnessPlaceholder.png";
+        private const string SadnessSpritePath = "Assets/SadnessBattle/Sprites/Sadness.png";
+        private static readonly Vector3 SadnessDiningPosition = new Vector3(-0.2f, 2.54f, 0f);
+        private static readonly Vector3 SadnessDiningScale = new Vector3(0.55f, 0.55f, 1f);
         private static readonly string[] MemoryFriendNames = { "MemoryFriendA", "MemoryFriendB", "MemoryFriendC" };
         private static readonly string[] LegacyPlacedFriendNames = { "Player_2", "Player_Actions_4", "Player_9" };
 
@@ -70,7 +70,7 @@ namespace SadnessBattle.EditorTools
             Sprite[] friendSprites = FindCurrentFriendSprites(scene);
             GameObject bulletPrefab = RequireAsset<GameObject>(BulletPrefabPath);
             AudioClip eveningChime = RequireAsset<AudioClip>(EveningChimePath);
-            Sprite sadnessSprite = CreateSadnessPlaceholder();
+            Sprite sadnessSprite = RequireAsset<Sprite>(SadnessSpritePath);
 
             SceneHierarchyUtility.DestroyNamedObject(scene, "SadnessBattleRoot");
             GameObject root = new GameObject("SadnessBattleRoot");
@@ -112,8 +112,8 @@ namespace SadnessBattle.EditorTools
 
             GameObject sadnessActor = new GameObject("SadnessActor", typeof(SpriteRenderer));
             sadnessActor.transform.SetParent(root.transform);
-            sadnessActor.transform.position = environment.homeMotherSpot.position + new Vector3(1.4f, 0f, 0f);
-            sadnessActor.transform.localScale = new Vector3(1.4f, 1.4f, 1f);
+            sadnessActor.transform.position = SadnessDiningPosition;
+            sadnessActor.transform.localScale = SadnessDiningScale;
             SpriteRenderer sadnessRenderer = sadnessActor.GetComponent<SpriteRenderer>();
             sadnessRenderer.sprite = sadnessSprite;
             sadnessRenderer.sortingOrder = 4;
@@ -272,43 +272,6 @@ namespace SadnessBattle.EditorTools
             rect.pivot = new Vector2(0.5f, 0f);
             rect.anchoredPosition = new Vector2(0f, y);
             rect.sizeDelta = new Vector2(-400f, height);
-        }
-
-        private static Sprite CreateSadnessPlaceholder()
-        {
-            Directory.CreateDirectory(GeneratedSpritesDirectory);
-            if (!File.Exists(SadnessPlaceholderPath))
-            {
-                const int size = 64;
-                Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
-                Color[] pixels = new Color[size * size];
-                Vector2 center = new Vector2(size * 0.5f, size * 0.5f);
-                for (int y = 0; y < size; y++)
-                {
-                    for (int x = 0; x < size; x++)
-                    {
-                        float distance = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), center);
-                        pixels[y * size + x] = distance <= 28f
-                            ? new Color(0.35f, 0.38f, 0.45f, 0.82f)
-                            : Color.clear;
-                    }
-                }
-                texture.SetPixels(pixels);
-                texture.Apply();
-                File.WriteAllBytes(SadnessPlaceholderPath, texture.EncodeToPNG());
-                UnityEngine.Object.DestroyImmediate(texture);
-                AssetDatabase.ImportAsset(SadnessPlaceholderPath, ImportAssetOptions.ForceSynchronousImport);
-            }
-
-            TextureImporter importer = AssetImporter.GetAtPath(SadnessPlaceholderPath) as TextureImporter;
-            importer.textureType = TextureImporterType.Sprite;
-            importer.spriteImportMode = SpriteImportMode.Single;
-            importer.spritePixelsPerUnit = 32f;
-            importer.filterMode = FilterMode.Point;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.mipmapEnabled = false;
-            importer.SaveAndReimport();
-            return RequireAsset<Sprite>(SadnessPlaceholderPath);
         }
 
         private static Sprite RequireSpriteSubAsset(string path, string spriteName)

@@ -22,8 +22,8 @@ namespace PKD.EditorTools
         private const string ContackSpritePath = "Assets/Resources/AngerBattle/ContackVertical.png";
         private const string AngerSpritePath = "Assets/Resources/AngerBattle/AngerVertical.png";
         private const string AnxietySpritePath = "Assets/Resources/AngerBattle/AnxietyVertical.png";
-        private const string ChildSpritePath = "Assets/Sprites/Tiles/pixelworld_complete_v.1.8/Characters/MaleCharacter/PNGs/M_idle_front-Sheet.png";
-        private const string ChildSpriteName = "M_idle_front-Sheet_3";
+        private const string SadnessSpritePath = "Assets/SadnessBattle/Sprites/Sadness.png";
+        private const float SadnessMapScale = 0.28f;
         private const string MotherSpritePath = "Assets/Sprites/Tiles/pixelworld_complete_v.1.8/Characters/FemaleCharacter/PNGs/F_idle_left-Sheet.png";
         private const string MotherSpriteName = "F_idle_left-Sheet_3";
         private const string JapaneseFontAssetPath = "Assets/Fonts/NotoSansJP SDF.asset";
@@ -82,7 +82,7 @@ namespace PKD.EditorTools
             Sprite contackSprite = RequireAsset<Sprite>(ContackSpritePath);
             Sprite angerSprite = RequireAsset<Sprite>(AngerSpritePath);
             Sprite anxietySprite = RequireAsset<Sprite>(AnxietySpritePath);
-            Sprite childSprite = RequireSpriteSubAsset(ChildSpritePath, ChildSpriteName);
+            Sprite sadnessSprite = RequireAsset<Sprite>(SadnessSpritePath);
             Sprite motherSprite = RequireSpriteSubAsset(MotherSpritePath, MotherSpriteName);
             TMP_FontAsset japaneseFont = RequireAsset<TMP_FontAsset>(JapaneseFontAssetPath);
 
@@ -90,7 +90,7 @@ namespace PKD.EditorTools
             UpdateAngerBattle(scene, contackSprite, angerSprite);
             UpdateFuanBattle(scene, contackSprite, anxietySprite);
             UpdateBedFlight(scene, contackSprite);
-            UpdateSadnessContent(scene, contackSprite, childSprite, motherSprite);
+            UpdateSadnessContent(scene, contackSprite, sadnessSprite, motherSprite);
             RepairMissingFontReferences(scene, japaneseFont);
             ApplyInitialActiveState(scene);
 
@@ -202,7 +202,7 @@ namespace PKD.EditorTools
             EditorUtility.SetDirty(controller);
         }
 
-        private static void UpdateSadnessContent(Scene scene, Sprite contackSprite, Sprite childSprite, Sprite motherSprite)
+        private static void UpdateSadnessContent(Scene scene, Sprite contackSprite, Sprite sadnessSprite, Sprite motherSprite)
         {
             SadnessMapEnvironment environment = RequireComponent<SadnessMapEnvironment>(
                 RequireSceneObject(scene, "SadnessMapEnvironment"));
@@ -218,8 +218,10 @@ namespace PKD.EditorTools
                 UnityEngine.Object.DestroyImmediate(placedMother);
             }
 
-            recall.player.gameObject.name = "ChildPlayer";
-            SetSprite(recall.player.gameObject, childSprite);
+            recall.player.gameObject.name = "SadnessPlayer";
+            recall.player.transform.localScale = Vector3.one * SadnessMapScale;
+            SetSprite(recall.player.gameObject, sadnessSprite);
+            EditorUtility.SetDirty(recall.player.transform);
             recall.motherTransform.gameObject.name = "MotherActor";
             recall.motherTransform.position = environment.homeMotherSpot.position;
             SetSprite(recall.motherTransform.gameObject, motherSprite);
@@ -336,7 +338,7 @@ namespace PKD.EditorTools
             ValidateSprite(scene, "ContackPlayer", RequireAsset<Sprite>(ContackSpritePath));
             ValidateSprite(scene, "AngerActor", RequireAsset<Sprite>(AngerSpritePath));
             ValidateSprite(scene, "AnxietyActor", RequireAsset<Sprite>(AnxietySpritePath));
-            ValidateSprite(scene, "ChildPlayer", RequireSpriteSubAsset(ChildSpritePath, ChildSpriteName));
+            ValidateSprite(scene, "SadnessPlayer", RequireAsset<Sprite>(SadnessSpritePath));
             ValidateSprite(scene, "MotherActor", RequireSpriteSubAsset(MotherSpritePath, MotherSpriteName));
             ValidateSprite(scene, "MotherTarget", RequireSpriteSubAsset(MotherSpritePath, MotherSpriteName));
 

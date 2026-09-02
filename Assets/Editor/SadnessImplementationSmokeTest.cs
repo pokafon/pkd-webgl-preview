@@ -38,6 +38,12 @@ public static class SadnessImplementationSmokeTest
             MemoryRecallController recall = Resources.FindObjectsOfTypeAll<MemoryRecallController>()
                 .FirstOrDefault(item => item.gameObject.scene.IsValid());
             Require(recall != null && recall.mapEnvironment == environment, "MemoryRecallController uses shared map");
+            Require(recall.player != null && recall.player.gameObject.name == "SadnessPlayer", "memory recall is controlled by Sadness");
+            SpriteRenderer recallPlayerRenderer = recall.player.GetComponent<SpriteRenderer>();
+            Require(recallPlayerRenderer != null &&
+                    AssetDatabase.GetAssetPath(recallPlayerRenderer.sprite) == "Assets/SadnessBattle/Sprites/Sadness.png",
+                "memory recall uses the Sadness artwork");
+            Require(Mathf.Approximately(recall.player.transform.localScale.x, 0.28f), "memory recall Sadness uses map scale");
             Require(recall.friends != null && recall.friends.Length == 3 && recall.friends.All(friend => friend.npcTransform != null), "memory recall has three friends");
             Require(recall.motherTransform != null && recall.eveningChimeClip != null, "memory recall mother and chime are wired");
             ValidateHomeExitTransition(environment, recall);
@@ -50,10 +56,18 @@ public static class SadnessImplementationSmokeTest
             Require(battle.sadnessActor != null && battle.eveningChimeClip != null, "sadness actor and chime are wired");
             Require(launcher.memoryRecallRoot != null && !launcher.memoryRecallRoot.activeSelf, "MemoryRecallRoot starts hidden");
             Require(launcher.sadnessBattleRoot != null && !launcher.sadnessBattleRoot.activeSelf, "SadnessBattleRoot starts hidden");
+            string[] requiredDebugNodes =
+            {
+                "Ending", "TrueEnd_Start", "TrueEnd_Consult", "TrueEnd_AfterConsult", "TrueEnd_End"
+            };
+            Require(requiredDebugNodes.All(node => launcher.debugStoryNodes.Contains(node)),
+                "F1 menu exposes every ending checkpoint");
 
             Require(File.Exists("Assets/Yarn/Sadness.yarn"), "Sadness.yarn exists");
             string escapeYarn = File.ReadAllText("Assets/Yarn/Escape.yarn");
             Require(escapeYarn.Contains("<<jump Sadness>>"), "Escape.yarn connects to Sadness");
+            Require(escapeYarn.Contains("all_emotions_isolated()") && escapeYarn.Contains("title: TrueEnd_End"),
+                "Escape.yarn contains both ending routes");
 
             Debug.Log("SADNESS_IMPLEMENTATION_SMOKE_RESULT: SUCCESS");
             EditorApplication.Exit(0);

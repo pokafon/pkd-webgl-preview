@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using PKD.Emotions;
 using TMPro;
 using UnityEngine;
 
@@ -184,9 +185,25 @@ namespace SadnessBattle
             motherTarget.enemy.OnDefeated -= HandleTargetDefeated;
             motherTarget.enemy.SetPresent(false);
             motherTarget.defeated = true;
-            if (sadnessActor != null) sadnessActor.SetActive(false);
+
+            EmotionOutcome resolution = EmotionOutcome.Unresolved;
+            yield return StartCoroutine(EmotionResolutionFlow.Choose(
+                this,
+                EmotionKind.Sadness,
+                sadnessActor != null ? sadnessActor.transform : null,
+                attackLineText,
+                characterNameText,
+                lineBackground,
+                value => resolution = value));
+
+            if (resolution == EmotionOutcome.Eliminated && sadnessActor != null)
+            {
+                sadnessActor.SetActive(false);
+            }
 
             yield return ShowLineAndWaitForSpace(finalLine);
+
+            if (sadnessActor != null) sadnessActor.SetActive(false);
 
             phase = BattlePhase.Finished;
             mapEnvironment.HideMaps();
