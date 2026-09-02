@@ -314,6 +314,25 @@ namespace AngerBattle
             }
         }
 
+        /// <summary>
+        /// TRUE ENDの相談パートのように&lt;&lt;start_minigame&gt;&gt;を経由しない場面から、
+        /// 怒り戦・不安戦と同じ「時計＋ノイズ」入室演出（就寝→精神世界）だけを単体で流用する。
+        /// </summary>
+        [YarnCommand("clock_glitch_intro")]
+        public static IEnumerator PlayClockGlitchIntroCommand()
+        {
+            if (instance == null || instance.clockGlitchIntro == null) yield break;
+            yield return instance.clockGlitchIntro.Play();
+        }
+
+        /// <summary>同上。「目覚めの時計」退室演出（精神世界→朝）だけを単体で流用する。</summary>
+        [YarnCommand("wake_glitch_intro")]
+        public static IEnumerator PlayWakeGlitchIntroCommand()
+        {
+            if (instance == null || instance.wakeGlitchIntro == null) yield break;
+            yield return instance.wakeGlitchIntro.Play();
+        }
+
         private Task RunAngerBattle()
         {
             return RunBattle(battleRoot, angerBattleController.StartBattle, PlayClockGlitchIntroIfPresent, PlayWakeThenGoodMorningOutro, PlayAngerLevelUpBeat);
