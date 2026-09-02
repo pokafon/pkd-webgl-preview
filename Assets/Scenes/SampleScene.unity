@@ -33576,8 +33576,26 @@ MonoBehaviour:
   portraitPositionMargin: 40
   bgmSource: {fileID: 7700000007}
   seSource: {fileID: 7700000006}
-  bgmClips: []
-  seClips: []
+  bgmClips:
+  - name: TrickStyle
+    clip: {fileID: 8300000, guid: 9b59a2248732e9d4b9517edf0f086c51, type: 3}
+  - name: Wasurenagusa
+    clip: {fileID: 8300000, guid: 8e2982fa2139a824b99643e77a77a9ca, type: 3}
+  - name: LakeWaltz
+    clip: {fileID: 8300000, guid: 96e342274ff7cd4419643e86fb6e16cc, type: 3}
+  seClips:
+  - name: ClockTick
+    clip: {fileID: 8300000, guid: e00c2135ea2c480e857486de8de48daf, type: 3}
+  - name: Bell
+    clip: {fileID: 8300000, guid: 2bc804cfb0af82143af3ea8cd9ba65c1, type: 3}
+  - name: EveningChime
+    clip: {fileID: 8300000, guid: 527193def7405c94582b0133c6b5488c, type: 3}
+  - name: WhipCrack
+    clip: {fileID: 8300000, guid: bdc5d05188554816bfb2506321934e75, type: 3}
+  - name: RunWetRoad
+    clip: {fileID: 8300000, guid: 3e58e2a8d48a7bc4986b5bd4a742d271, type: 3}
+  - name: RunAsphalt
+    clip: {fileID: 8300000, guid: 552f09afd97042541bfe2b8e0115add8, type: 3}
   blackoutImage: {fileID: 396421440}
 --- !u!82 &7700000006
 AudioSource:

@@ -18,6 +18,26 @@ namespace PKD.EditorTools
         private const string ScenePath = "Assets/Scenes/SampleScene.unity";
         private const string GirlfriendPortraitPath = "Assets/Sprites/ChatGPT Image 2026年8月22日 23_44_26.png";
 
+        // 既存ミニゲームで既に使われている音源を、DialogueVisuals（現実パート）からも
+        // <<bgm>>/<<se>>で流用できるよう登録する。同じAudioClipを複数の場所から
+        // 参照しても問題ないため、新規音源は用意していない。
+        private static readonly (string name, string path)[] BgmEntries =
+        {
+            ("TrickStyle", "Assets/Audio/Trick_style.mp3"),
+            ("Wasurenagusa", "Assets/Audio/ワスレナグサ.mp3"),
+            ("LakeWaltz", "Assets/Audio/湖面のワルツ.mp3"),
+        };
+
+        private static readonly (string name, string path)[] SeEntries =
+        {
+            ("ClockTick", "Assets/Audio/ClockSound.mp3"),
+            ("Bell", "Assets/Audio/Bell_Accent03-1(Dry).mp3"),
+            ("EveningChime", "Assets/Audio/夕焼け小焼け 防災行政無線チャイム 17時.mp3"),
+            ("WhipCrack", "Assets/Audio/鞭を振り回す1.mp3"),
+            ("RunWetRoad", "Assets/Audio/雨で濡れた道路を走る.mp3"),
+            ("RunAsphalt", "Assets/Audio/アスファルトの上を走る1.mp3"),
+        };
+
         [MenuItem("Tools/DialogueVisuals/Upgrade Scene")]
         public static void UpgradeFromMenu()
         {
@@ -62,6 +82,15 @@ namespace PKD.EditorTools
             EnsureBlackoutImage(scene, visuals);
             EnsureAudioSources(visuals);
             EnsureNamedPortrait(visuals, "Girlfriend", GirlfriendPortraitPath);
+
+            foreach ((string name, string path) in BgmEntries)
+            {
+                EnsureNamedClip(visuals, isBgm: true, name, path);
+            }
+            foreach ((string name, string path) in SeEntries)
+            {
+                EnsureNamedClip(visuals, isBgm: false, name, path);
+            }
 
             EditorSceneManager.MarkSceneDirty(scene);
             if (!EditorSceneManager.SaveScene(scene))
@@ -142,6 +171,32 @@ namespace PKD.EditorTools
             }
 
             visuals.portraits = portraits.ToArray();
+        }
+
+        /// <summary>bgmClips/seClips配列に名前付き音源を追加・更新する（同名があれば差し替え）。</summary>
+        private static void EnsureNamedClip(DialogueVisuals visuals, bool isBgm, string name, string assetPath)
+        {
+            AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(assetPath);
+            if (clip == null)
+            {
+                throw new InvalidOperationException("音源が読み込めません: " + assetPath);
+            }
+
+            List<DialogueVisuals.NamedClip> clips = ((isBgm ? visuals.bgmClips : visuals.seClips) ?? Array.Empty<DialogueVisuals.NamedClip>()).ToList();
+            int existingIndex = clips.FindIndex(entry => entry.name == name);
+            var updated = new DialogueVisuals.NamedClip { name = name, clip = clip };
+
+            if (existingIndex >= 0)
+            {
+                clips[existingIndex] = updated;
+            }
+            else
+            {
+                clips.Add(updated);
+            }
+
+            if (isBgm) visuals.bgmClips = clips.ToArray();
+            else visuals.seClips = clips.ToArray();
         }
 
         private static void EnsureAudioSources(DialogueVisuals visuals)
