@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -14,6 +16,7 @@ namespace PKD.EditorTools
     public static class DialogueVisualsUpgradeTool
     {
         private const string ScenePath = "Assets/Scenes/SampleScene.unity";
+        private const string GirlfriendPortraitPath = "Assets/Sprites/ChatGPT Image 2026年8月22日 23_44_26.png";
 
         [MenuItem("Tools/DialogueVisuals/Upgrade Scene")]
         public static void UpgradeFromMenu()
@@ -58,6 +61,7 @@ namespace PKD.EditorTools
 
             EnsureBlackoutImage(scene, visuals);
             EnsureAudioSources(visuals);
+            EnsureNamedPortrait(visuals, "Girlfriend", GirlfriendPortraitPath);
 
             EditorSceneManager.MarkSceneDirty(scene);
             if (!EditorSceneManager.SaveScene(scene))
@@ -113,6 +117,31 @@ namespace PKD.EditorTools
             image.enabled = false;
 
             visuals.blackoutImage = image;
+        }
+
+        /// <summary>backgrounds/portraits配列に名前付きスプライトを追加・更新する（同名があれば差し替え）。</summary>
+        private static void EnsureNamedPortrait(DialogueVisuals visuals, string name, string assetPath)
+        {
+            Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+            if (sprite == null)
+            {
+                throw new InvalidOperationException("立ち絵のスプライトが読み込めません: " + assetPath);
+            }
+
+            List<DialogueVisuals.NamedSprite> portraits = (visuals.portraits ?? Array.Empty<DialogueVisuals.NamedSprite>()).ToList();
+            int existingIndex = portraits.FindIndex(entry => entry.name == name);
+            var updated = new DialogueVisuals.NamedSprite { name = name, sprite = sprite };
+
+            if (existingIndex >= 0)
+            {
+                portraits[existingIndex] = updated;
+            }
+            else
+            {
+                portraits.Add(updated);
+            }
+
+            visuals.portraits = portraits.ToArray();
         }
 
         private static void EnsureAudioSources(DialogueVisuals visuals)

@@ -33571,6 +33571,8 @@ MonoBehaviour:
   portraits:
   - name: Boss
     sprite: {fileID: 21300000, guid: 6e12f13270fe4b0db43054ec557477c0, type: 3}
+  - name: Girlfriend
+    sprite: {fileID: -3426851254462875780, guid: 2d427007b810f884094b9b8267f6a7b8, type: 3}
   portraitPositionMargin: 40
   bgmSource: {fileID: 7700000007}
   seSource: {fileID: 7700000006}
