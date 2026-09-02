@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Threading.Tasks;
 using BedFlight;
+using PKD.Emotions;
 using UnityEngine;
 using Yarn.Unity;
 
@@ -100,6 +101,7 @@ namespace AngerBattle
         private void Awake()
         {
             instance = this;
+            EmotionRouteState.Reset();
             AudioListener.volume = Mathf.Clamp01(globalAudioVolume);
 
             if (dialogueUIRoot != null)
@@ -133,7 +135,11 @@ namespace AngerBattle
         public KeyCode debugMenuKey = KeyCode.F1;
 
         [Tooltip("メニューから直接ジャンプできるYarnのノード名（各ステージの開始ノードなど）")]
-        public string[] debugStoryNodes = new string[] { "Prologue", "Anger", "Anxiety", "Escape" };
+        public string[] debugStoryNodes = new string[]
+        {
+            "Prologue", "Anger", "Anxiety", "Escape", "Sadness", "Ending",
+            "TrueEnd_Start", "TrueEnd_Consult", "TrueEnd_AfterConsult", "TrueEnd_End"
+        };
 
         [Tooltip("メニューから直接単体起動できるミニゲーム名")]
         public string[] debugMinigames = new string[] { "IkariBattle", "FuanBattle", "BedFlight", "MemoryRecall", "SadnessBattle" };
@@ -143,6 +149,7 @@ namespace AngerBattle
 
         private DialogueRunner debugDialogueRunner;
         private bool debugMenuVisible = false;
+        private Vector2 debugMenuScroll;
 
         private void Update()
         {
@@ -156,8 +163,10 @@ namespace AngerBattle
         {
             if (!debugMenuVisible) return;
 
-            GUILayout.BeginArea(new Rect(20, 20, 260, 400), GUI.skin.window);
+            float menuHeight = Mathf.Min(720f, Screen.height - 40f);
+            GUILayout.BeginArea(new Rect(20, 20, 340, menuHeight), GUI.skin.window);
             GUILayout.Label("デバッグ：シーンセレクト（F1で閉じる）");
+            debugMenuScroll = GUILayout.BeginScrollView(debugMenuScroll);
 
             GUILayout.Space(8);
             GUILayout.Label("ストーリー開始ノード");
@@ -167,6 +176,19 @@ namespace AngerBattle
                 {
                     JumpToStoryNode(node);
                 }
+            }
+
+            GUILayout.Space(8);
+            GUILayout.Label("エンディング分岐テスト");
+            if (GUILayout.Button("全員隔離 → TRUE END判定"))
+            {
+                SetDebugEmotionRoute(true);
+                JumpToStoryNode("Ending");
+            }
+            if (GUILayout.Button("一人消去 → 通常END判定"))
+            {
+                SetDebugEmotionRoute(false);
+                JumpToStoryNode("Ending");
             }
 
             GUILayout.Space(8);
@@ -182,7 +204,16 @@ namespace AngerBattle
                 }
             }
 
+            GUILayout.EndScrollView();
             GUILayout.EndArea();
+        }
+
+        private static void SetDebugEmotionRoute(bool allIsolated)
+        {
+            EmotionRouteState.Reset();
+            EmotionRouteState.Set(EmotionKind.Anger, allIsolated ? EmotionOutcome.Isolated : EmotionOutcome.Eliminated);
+            EmotionRouteState.Set(EmotionKind.Anxiety, EmotionOutcome.Isolated);
+            EmotionRouteState.Set(EmotionKind.Sadness, EmotionOutcome.Isolated);
         }
 
         private void JumpToStoryNode(string nodeName)
@@ -198,6 +229,15 @@ namespace AngerBattle
             }
 
             debugMenuVisible = false;
+
+            if (nodeName != null && nodeName.StartsWith("TrueEnd_") && nodeName != "TrueEnd_Start")
+            {
+                // TrueEnd_Startを経由しないデバッグジャンプだと、相談済みフラグが前回プレイの値のまま
+                // 残ってしまい、選択肢が欠けて見える（本来はTrueEnd_Startの<<set...=false>>でリセットされる）。
+                debugDialogueRunner.VariableStorage.SetValue("$consultedAnger", false);
+                debugDialogueRunner.VariableStorage.SetValue("$consultedAnxiety", false);
+                debugDialogueRunner.VariableStorage.SetValue("$consultedSadness", false);
+            }
 
             AbortActiveBattle();
 

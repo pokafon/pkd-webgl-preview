@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using PKD.Emotions;
 using TMPro;
 using UnityEngine;
 
@@ -58,6 +59,12 @@ namespace AngerBattle
         };
         [Tooltip("節目の台詞を通常表示しておく秒数")]
         public float thresholdLineDuration = 1.8f;
+        [Tooltip("撃破直後、隔離／消去の選択に入る前に表示する怒りの最後の訴えとコンタックの返答")]
+        public string[] defeatExchangeLines = new string[]
+        {
+            "怒り: ぼく、もうイヤなんだ。ほしいものを、ほしいって言いたい。やりたいことを、やりたいって言いたい。もう、がまんなんてしたくない。",
+            "コンタック: それは異常です。"
+        };
         [Tooltip("3発目の命中時に時間を止める秒数")]
         public float phaseHitStopDuration = 0.08f;
 
@@ -301,6 +308,27 @@ namespace AngerBattle
                 ClearEnemyBullets();
                 if (bgm != null) bgm.StopMusic();
                 HideLine();
+
+                if (defeatExchangeLines != null)
+                {
+                    foreach (string line in defeatExchangeLines)
+                    {
+                        if (string.IsNullOrEmpty(line)) continue;
+                        yield return StartCoroutine(ShowLineAndWaitForSpace(line));
+                    }
+                }
+
+                yield return StartCoroutine(EmotionResolutionFlow.Choose(
+                    this,
+                    EmotionKind.Anger,
+                    enemy.transform,
+                    attackLineText,
+                    characterNameText,
+                    lineBackground,
+                    null));
+
+                // 怒り戦では最後の一撃までを戦闘として遊ぶ。隔離時はその場の怒りを
+                // 牢へ閉じ込め、消去時は従来どおり撃破済み状態のまま終了する。
                 CompleteBattle();
                 yield break;
             }
