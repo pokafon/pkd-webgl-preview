@@ -534,13 +534,17 @@ namespace AngerBattle
             }
 
             int damage = maxHealth - currentHealth;
-            if (damage <= 0 || damage >= maxHealth || damage % 3 != 0)
+            int totalPhases = thresholdLines != null ? Mathf.Clamp(thresholdLines.Length, 0, 3) : 0;
+            if (damage <= 0 || damage >= maxHealth || totalPhases <= 0 || lastHandledPhase >= totalPhases)
             {
                 return;
             }
 
-            int phase = damage / 3;
-            if (phase <= lastHandledPhase || phase > 3)
+            // 節目は「maxHealthを3で割った位置」固定ではなく、maxHealthをフェーズ数+1で均等分割した割合で判定する。
+            // Inspectorでenemyの最大HPを変えても、3の倍数固定ではなく全フェーズが必ず順番に発生する。
+            int phase = lastHandledPhase + 1;
+            int phaseThreshold = Mathf.Max(1, Mathf.RoundToInt(maxHealth * (float)phase / (totalPhases + 1)));
+            if (damage < phaseThreshold)
             {
                 return;
             }
