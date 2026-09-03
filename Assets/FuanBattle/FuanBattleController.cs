@@ -159,6 +159,25 @@ namespace AngerBattle
         [Tooltip("最終回答後、全履歴を見せる秒数")]
         public float finalHistoryHoldSeconds = 1.15f;
 
+        [Header("落下ステージ（試作）")]
+        [Tooltip("落下ミニゲームで使うカメラ。未設定ならquestionCameraを使う")]
+        public Camera fallStageCamera;
+        [Tooltip("自動落下の速度（ワールド距離／秒）")]
+        public float fallStageDescendSpeed = 3.2f;
+        [Tooltip("左右移動の速度")]
+        public float fallStageMoveSpeed = 6f;
+        [Tooltip("落下の総距離。短めでよい")]
+        public float fallStageDistance = 11f;
+        [Tooltip("落下通路の片側の幅")]
+        public float fallStageCorridorHalfWidth = 2.2f;
+        [Tooltip("Spaceキーで発動する仮スローの継続秒数")]
+        public float fallStageSlowDuration = 1.5f;
+        [Tooltip("仮スローのクールタイム秒数（スロー終了後から起算）")]
+        public float fallStageSlowCooldown = 3f;
+        [Range(0.05f, 1f)]
+        [Tooltip("仮スロー中の自動落下速度倍率")]
+        public float fallStageSlowFactor = 0.35f;
+
         [Header("不安登場演出")]
         public float bpm = 95f;
         [Tooltip("不安登場からセリフ表示までに空ける拍数（現状は1拍）")]
@@ -269,25 +288,20 @@ namespace AngerBattle
             bool questionReady = ConfigureQuestionExperience();
             if (questionReady)
             {
-                questionExperience.PrepareChaseOpening(resolvedAnxietySprite, resolvedContackSprite, openingLayout);
+                // 不安とコンタックが見つめ合う冒頭の追跡演出は廃止。
+                // 最初から地上の床と穴を見せ、コンタックを穴の前に置いた状態で始める。
+                questionExperience.ShowGroundScene();
             }
 
-            // --- 0. 石畳の上で二人を見せ、コンタックの一言を表示する ---
+            // --- 0. コンタックの一言を表示する ---
             yield return StartCoroutine(ShowLineAndWaitForSpace(startLine));
 
-            // --- 1. 不安を追う縦スクロールから、YES / NO質問へ接続する ---
+            // --- 1. YES / NO質問へ接続する ---
             if (bgm != null)
             {
                 bgm.PlayMusic();
             }
 
-            if (questionReady)
-            {
-                yield return StartCoroutine(questionExperience.PlayChaseIntro(
-                    openingChaseDuration,
-                    openingAfterExitHoldSeconds,
-                    openingScrollDuration));
-            }
             yield return StartCoroutine(RunQuestionSequence(questionReady));
 
             // --- 2. 不安本体が登場。登場と同時にBGMを止める ---
@@ -490,6 +504,18 @@ namespace AngerBattle
                 questionRainMaterial,
                 questionRunningWetRoadClip,
                 questionRunningWetRoadVolume);
+
+            questionExperience.ConfigureFallStage(
+                player,
+                fallStageCamera != null ? fallStageCamera : questionCamera,
+                attackLineText.font,
+                fallStageDescendSpeed,
+                fallStageMoveSpeed,
+                fallStageSlowDuration,
+                fallStageSlowCooldown,
+                fallStageSlowFactor,
+                fallStageDistance,
+                fallStageCorridorHalfWidth);
             return true;
         }
 

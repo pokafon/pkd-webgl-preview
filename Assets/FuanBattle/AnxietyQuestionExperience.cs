@@ -70,6 +70,8 @@ namespace AngerBattle
         private EventSystem localEventSystem;
         private AnxietyQuestionWorldVisuals worldVisuals;
         private bool useWorldArt;
+        private PlayerController groundPlayer;
+        private FallStageController fallStage;
 
         private static readonly Color BackgroundStart = new Color(0.025f, 0.022f, 0.045f, 1f);
         private static readonly Color BackgroundEnd = new Color(0.075f, 0.018f, 0.10f, 1f);
@@ -134,6 +136,87 @@ namespace AngerBattle
                 runningWetRoadClip,
                 runningWetRoadVolume);
             EnsureUI();
+        }
+
+        /// <summary>地上のWASD移動と、穴に落ちた後の落下ミニゲームに必要な参照・調整値を渡す。</summary>
+        public void ConfigureFallStage(
+            PlayerController requestedPlayer,
+            Camera fallCamera,
+            TMP_FontAsset fallFont,
+            float autoDescendSpeed,
+            float playerMoveSpeed,
+            float slowDuration,
+            float slowCooldown,
+            float slowFactor,
+            float fallDistance,
+            float corridorHalfWidth)
+        {
+            groundPlayer = requestedPlayer;
+
+            if (fallStage == null)
+            {
+                fallStage = GetComponent<FallStageController>();
+                if (fallStage == null)
+                {
+                    fallStage = gameObject.AddComponent<FallStageController>();
+                }
+            }
+            fallStage.Configure(
+                fallCamera != null ? fallCamera : Camera.main,
+                requestedPlayer,
+                fallFont,
+                autoDescendSpeed,
+                playerMoveSpeed,
+                slowDuration,
+                slowCooldown,
+                slowFactor,
+                fallDistance,
+                corridorHalfWidth);
+        }
+
+        /// <summary>
+        /// 見つめ合う冒頭演出を挟まず、最初から地上の床と単一の穴を見せ、
+        /// コンタックを穴の前に置いた状態で開始する。
+        /// </summary>
+        public void ShowGroundScene()
+        {
+            EnsureUI();
+            if (!useWorldArt)
+            {
+                return;
+            }
+
+            worldVisuals.Show();
+
+            if (groundPlayer != null)
+            {
+                // 床・入口(YesGate)はsortingOrder 37〜42の不透明な全画面スプライトのため、
+                // 既定のsortingOrder 0のままだとコンタックがその裏に隠れて見えなくなる。
+                SpriteRenderer playerRenderer = groundPlayer.GetComponent<SpriteRenderer>();
+                if (playerRenderer != null)
+                {
+                    playerRenderer.sortingOrder = 50;
+                }
+                PositionPlayerAtHoleStart();
+            }
+        }
+
+        private void PositionPlayerAtHoleStart()
+        {
+            if (groundPlayer == null || worldVisuals == null)
+            {
+                return;
+            }
+            Camera camera = worldVisuals.QuestionCamera;
+            if (camera == null)
+            {
+                return;
+            }
+
+            float distance = Mathf.Abs(camera.transform.position.z);
+            Vector3 startWorld = camera.ViewportToWorldPoint(new Vector3(0.49f, 0.16f, distance));
+            startWorld.z = groundPlayer.transform.position.z;
+            groundPlayer.transform.position = startWorld;
         }
 
         public void PrepareChaseOpening(
@@ -207,27 +290,33 @@ namespace AngerBattle
                 }
 
                 yield return AnimateQuestionIn(intensity);
-                yield return WaitForAnswer(intensity);
+
+                if (useWorldArt)
+                {
+                    yield return RunHoleAndFallSequence(intensity);
+                }
+                else
+                {
+                    yield return WaitForAnswer(intensity);
+                }
 
                 answers.Add(pendingAnswer);
                 if (!useWorldArt)
                 {
                     UpdateHistory(questions, i);
+                    yield return AnimateAnswerCommit(i, intensity);
                 }
-                yield return AnimateAnswerCommit(i, intensity);
 
                 bool correct = IsCorrectAnswer(pendingAnswer, correctAnswers, i);
                 bool finalQuestion = i == questionCount - 1;
 
                 if (useWorldArt)
                 {
-                    yield return Fade(contentGroup, 1f, 0f, 0.16f);
-                    yield return DiveToBlack(pendingAnswer);
+                    // 落下ステージ内で既にYES／NOへ入っており、地上の暗幕はPlayHoleDiveで暗転済み。
                     worldVisuals.ResetView();
 
                     if (!correct)
                     {
-                        // 選んだ経路の足跡は消さず、暗転先から1問目へ戻る。
                         i = 0;
                         continue;
                     }
@@ -300,19 +389,6 @@ namespace AngerBattle
                 System.StringComparison.OrdinalIgnoreCase);
         }
 
-        private IEnumerator DiveToBlack(string answer)
-        {
-            Color startColor = background.color;
-            yield return worldVisuals.PlayDive(answer, diveDuration, progress =>
-            {
-                // 入口の暗部が画面を覆い始めてから黒を重ね、画像の闇から連続して暗転させる。
-                float blackout = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.78f, 1f, progress));
-                background.color = Color.Lerp(startColor, DiveBlack, blackout);
-            });
-            worldVisuals.StopWalkingAudio();
-            background.color = DiveBlack;
-        }
-
         /// <summary>
         /// 質問終了後も残していた不透明な暗幕を開き、準備済みの戦闘画面を初めて見せる。
         /// </summary>
@@ -372,21 +448,19 @@ namespace AngerBattle
             intrusiveText.text = useWorldArt ? string.Empty : BuildIntrusiveText(intrusiveLines, index);
             intrusiveText.alpha = useWorldArt ? 0f : Mathf.Lerp(0f, 0.72f, intensity);
             historyGroup.alpha = useWorldArt ? 0f : (index == 0 ? 0f : Mathf.Lerp(0.48f, 0.88f, intensity));
-            footerText.text = useWorldArt && index == 0 ? "Y / N   またはクリック" : string.Empty;
+            footerText.text = useWorldArt && index == 0 ? "WASD / 矢印キーで穴へ" : string.Empty;
 
-            yesButton.interactable = true;
-            noButton.interactable = true;
-            if (yesPuddleButton != null)
+            if (!useWorldArt)
             {
-                yesPuddleButton.interactable = true;
-                noPuddleButton.interactable = true;
+                yesButton.interactable = true;
+                noButton.interactable = true;
+                yesGroup.alpha = 1f;
+                noGroup.alpha = 1f;
             }
-            yesGroup.alpha = 1f;
-            noGroup.alpha = 1f;
             stageGroup.alpha = 0f;
             stageRect.localScale = new Vector3(0.985f, 0.985f, 1f);
 
-            if (EventSystem.current != null)
+            if (!useWorldArt && EventSystem.current != null)
             {
                 // 同じボタンが選択されたままだと2問目以降はOnSelectが再発火しない。
                 // 一度選択を外してからYESへ戻し、プレートと水面の反応を毎問復帰させる。
@@ -427,6 +501,84 @@ namespace AngerBattle
                 AnimateAmbient(intensity);
                 yield return null;
             }
+        }
+
+        /// <summary>
+        /// 地上でWASD移動して単一の穴へ入り、そのまま落下ステージへ入って
+        /// YES／NOのどちらへ入ったかで pendingAnswer を確定させる。
+        /// </summary>
+        private IEnumerator RunHoleAndFallSequence(float intensity)
+        {
+            pendingAnswer = null;
+            yield return WaitForHoleEntry(intensity);
+
+            yield return Fade(contentGroup, 1f, 0f, 0.16f);
+            Color startColor = background.color;
+            yield return worldVisuals.PlayHoleDive(diveDuration, progress =>
+            {
+                float blackout = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.78f, 1f, progress));
+                background.color = Color.Lerp(startColor, DiveBlack, blackout);
+            });
+            worldVisuals.StopWalkingAudio();
+            background.color = DiveBlack;
+
+            if (fallStage != null && fallStage.IsReady)
+            {
+                yield return FadeBackground(DiveBlack, new Color(DiveBlack.r, DiveBlack.g, DiveBlack.b, 0f), 0.2f);
+
+                string fallAnswer = null;
+                yield return fallStage.PlayFall(answer => fallAnswer = answer);
+                pendingAnswer = fallAnswer ?? "YES";
+
+                yield return FadeBackground(new Color(DiveBlack.r, DiveBlack.g, DiveBlack.b, 0f), DiveBlack, 0.2f);
+            }
+            else
+            {
+                // 落下ステージ未構成時のフェイルセーフ：地上の穴へ入った時点でYES扱いにする。
+                pendingAnswer = "YES";
+            }
+        }
+
+        /// <summary>WASD移動を有効にし、コンタックが地上の穴へ到達するまで待つ。</summary>
+        private IEnumerator WaitForHoleEntry(float intensity)
+        {
+            if (groundPlayer == null || worldVisuals == null)
+            {
+                yield break;
+            }
+
+            Camera camera = worldVisuals.QuestionCamera;
+            Vector2 originalMin = groundPlayer.minBounds;
+            Vector2 originalMax = groundPlayer.maxBounds;
+
+            if (camera != null)
+            {
+                float distance = Mathf.Abs(camera.transform.position.z);
+                Vector3 boundsMin = camera.ViewportToWorldPoint(new Vector3(0.10f, 0.10f, distance));
+                Vector3 boundsMax = camera.ViewportToWorldPoint(new Vector3(0.90f, 0.62f, distance));
+                groundPlayer.minBounds = new Vector2(boundsMin.x, boundsMin.y);
+                groundPlayer.maxBounds = new Vector2(boundsMax.x, boundsMax.y);
+            }
+            PositionPlayerAtHoleStart();
+
+            groundPlayer.enabled = true;
+            const float holeRadius = 0.55f;
+
+            while (true)
+            {
+                Vector3 holeCenter = worldVisuals.GetHoleWorldCenter();
+                Vector2 playerPosition = groundPlayer.transform.position;
+                if (Vector2.Distance(playerPosition, holeCenter) <= holeRadius)
+                {
+                    break;
+                }
+                AnimateAmbient(intensity);
+                yield return null;
+            }
+
+            groundPlayer.enabled = false;
+            groundPlayer.minBounds = originalMin;
+            groundPlayer.maxBounds = originalMax;
         }
 
         private IEnumerator AnimateAnswerCommit(int answerIndex, float intensity)
@@ -768,16 +920,14 @@ namespace AngerBattle
             questionText.color = SoftWhite;
             questionText.fontStyle = FontStyles.Bold;
 
-            yesButton = CreateButton("YES", stage.transform, useWorldArt ? new Vector2(0.202f, 0.320f) : new Vector2(0.08f, 0f), useWorldArt ? new Vector2(0.308f, 0.372f) : new Vector2(0.47f, 0.20f), out yesGroup);
-            noButton = CreateButton("NO", stage.transform, useWorldArt ? new Vector2(0.678f, 0.320f) : new Vector2(0.53f, 0f), useWorldArt ? new Vector2(0.784f, 0.372f) : new Vector2(0.92f, 0.20f), out noGroup);
-            yesButton.onClick.AddListener(() => Choose("YES"));
-            noButton.onClick.AddListener(() => Choose("NO"));
-
-            if (useWorldArt)
+            if (!useWorldArt)
             {
-                yesPuddleButton = CreatePuddleButton("YES", stage.transform, new Vector2(0.125f, 0.405f), new Vector2(0.390f, 0.650f));
-                noPuddleButton = CreatePuddleButton("NO", stage.transform, new Vector2(0.595f, 0.400f), new Vector2(0.865f, 0.650f));
-                CreateFootstepProgress(stage.transform);
+                // ワールドアート版（本番）は地上のクリック選択を廃止し、WASD移動＋落下ステージへ置き換えた。
+                // 旧来のテキストのみフォールバック表示でだけ、引き続きクリック／キーで選択するYES／NOボタンを使う。
+                yesButton = CreateButton("YES", stage.transform, new Vector2(0.08f, 0f), new Vector2(0.47f, 0.20f), out yesGroup);
+                noButton = CreateButton("NO", stage.transform, new Vector2(0.53f, 0f), new Vector2(0.92f, 0.20f), out noGroup);
+                yesButton.onClick.AddListener(() => Choose("YES"));
+                noButton.onClick.AddListener(() => Choose("NO"));
             }
 
             GameObject history = CreateUIObject("HistoryPanel", content.transform, typeof(CanvasGroup), typeof(Image));
@@ -803,97 +953,6 @@ namespace AngerBattle
             footerText.characterSpacing = 4f;
 
             root.SetActive(false);
-        }
-
-        private void CreateFootstepProgress(Transform parent)
-        {
-            GameObject trail = CreateUIObject("FootstepProgress", parent);
-            Stretch(trail.GetComponent<RectTransform>(), Vector2.zero, Vector2.one);
-            trail.transform.SetAsFirstSibling();
-
-            startLeftFootImage = CreateFootstepImage(
-                "StartLeftFoot",
-                trail.transform,
-                leftFootSprite,
-                new Vector2(0.478f, 0.064f),
-                new Vector2(0.036f, 0.108f),
-                -14f,
-                out startLeftFootRect);
-            startRightFootImage = CreateFootstepImage(
-                "StartRightFoot",
-                trail.transform,
-                rightFootSprite,
-                new Vector2(0.524f, 0.080f),
-                new Vector2(0.036f, 0.108f),
-                12f,
-                out startRightFootRect);
-
-            for (int i = 0; i < footstepImages.Length; i++)
-            {
-                Image image = CreateFootstepImage(
-                    $"Footstep{i + 1:00}",
-                    trail.transform,
-                    i % 2 == 0 ? leftFootSprite : rightFootSprite,
-                    new Vector2(0.5f, 0.12f),
-                    new Vector2(0.032f, 0.096f),
-                    0f,
-                    out RectTransform rect);
-                image.gameObject.SetActive(false);
-                footstepImages[i] = image;
-                footstepRects[i] = rect;
-            }
-
-            AnimateFootsteps();
-        }
-
-        private static Image CreateFootstepImage(
-            string objectName,
-            Transform parent,
-            Sprite sprite,
-            Vector2 center,
-            Vector2 size,
-            float angle,
-            out RectTransform rect)
-        {
-            GameObject step = CreateUIObject(objectName, parent, typeof(Image));
-            rect = step.GetComponent<RectTransform>();
-            Vector2 halfSize = size * 0.5f;
-            Stretch(rect, center - halfSize, center + halfSize);
-            rect.localEulerAngles = new Vector3(0f, 0f, angle);
-
-            Image image = step.GetComponent<Image>();
-            image.sprite = sprite;
-            image.preserveAspect = true;
-            image.raycastTarget = false;
-            step.SetActive(sprite != null);
-            return image;
-        }
-
-        private Button CreatePuddleButton(string answer, Transform parent, Vector2 anchorMin, Vector2 anchorMax)
-        {
-            GameObject obj = CreateUIObject(answer + "PuddleButton", parent, typeof(Image), typeof(Button));
-            Stretch(obj.GetComponent<RectTransform>(), anchorMin, anchorMax);
-            Image image = obj.GetComponent<Image>();
-            image.color = new Color(1f, 1f, 1f, 0.001f);
-            image.raycastTarget = true;
-
-            Button button = obj.GetComponent<Button>();
-            button.targetGraphic = image;
-            ColorBlock colors = button.colors;
-            colors.normalColor = Color.white;
-            colors.highlightedColor = Color.white;
-            colors.selectedColor = Color.white;
-            colors.pressedColor = new Color(0.92f, 0.95f, 1f, 1f);
-            colors.disabledColor = Color.clear;
-            colors.colorMultiplier = 1f;
-            colors.fadeDuration = 0.08f;
-            button.colors = colors;
-            button.onClick.AddListener(() => Choose(answer));
-
-            obj.AddComponent<EllipseRaycastFilter>();
-            AnxietyChoiceHoverRelay relay = obj.AddComponent<AnxietyChoiceHoverRelay>();
-            relay.Configure(this, answer);
-            return button;
         }
 
         private Button CreateButton(string label, Transform parent, Vector2 anchorMin, Vector2 anchorMax, out CanvasGroup group)
@@ -1020,35 +1079,6 @@ namespace AngerBattle
         }
     }
 
-    /// <summary>透明なUIボタンのクリック判定を長方形ではなく楕円内に限定する。</summary>
-    internal sealed class EllipseRaycastFilter : MonoBehaviour, ICanvasRaycastFilter
-    {
-        private RectTransform rectTransform;
-
-        public bool IsRaycastLocationValid(Vector2 screenPoint, Camera eventCamera)
-        {
-            if (rectTransform == null)
-            {
-                rectTransform = transform as RectTransform;
-            }
-            if (rectTransform == null || !RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    rectTransform,
-                    screenPoint,
-                    eventCamera,
-                    out Vector2 localPoint))
-            {
-                return false;
-            }
-
-            Rect rect = rectTransform.rect;
-            float radiusX = Mathf.Max(0.001f, rect.width * 0.5f);
-            float radiusY = Mathf.Max(0.001f, rect.height * 0.5f);
-            float normalizedX = (localPoint.x - rect.center.x) / radiusX;
-            float normalizedY = (localPoint.y - rect.center.y) / radiusY;
-            return normalizedX * normalizedX + normalizedY * normalizedY <= 1f;
-        }
-    }
-
     /// <summary>選択プレートへ、視認性を損なわない小さな浮き沈みを付ける。</summary>
     internal sealed class AnxietyChoicePlateFeedback : MonoBehaviour,
         IPointerEnterHandler,
@@ -1126,6 +1156,9 @@ namespace AngerBattle
     /// </summary>
     internal sealed class AnxietyQuestionWorldVisuals : MonoBehaviour
     {
+        // 落下ステージ移行に伴い、地上のYES／NO入口は意味を持たない単一の「穴」へ統合した。
+        // YesGate.png は全画面オーバーレイに穴の絵が焼き込まれた画像のため、穴の実際の見た目位置は
+        // 引き続きYesViewportCenterの位置のまま（NoGate側は将来の転用に備えて残すが常に非表示）。
         private static readonly Vector2 YesViewportCenter = new Vector2(0.255f, 0.524f);
         private static readonly Vector2 NoViewportCenter = new Vector2(0.731f, 0.515f);
         private static readonly Vector2 YesLabelViewportCenter = new Vector2(0.255f, 0.685f);
@@ -1485,20 +1518,21 @@ namespace AngerBattle
             rejectedLabel.transform.localScale = Vector3.one * Mathf.Lerp(1f, 0.94f, t);
         }
 
-        public IEnumerator PlayDive(string answer, float duration, System.Action<float> onProgress = null)
+        /// <summary>
+        /// 地上の単一の穴（YES／NOの意味を持たない）へカメラが寄っていく演出。
+        /// 落下ステージへ入る直前に使う。回答はまだ決まっていないため、選択の強調は行わない。
+        /// </summary>
+        public IEnumerator PlayHoleDive(float duration, System.Action<float> onProgress = null)
         {
             if (!ready)
             {
                 yield break;
             }
 
-            bool choseYes = string.Equals(answer, "YES", System.StringComparison.Ordinal);
             Vector3 startPosition = questionCamera.transform.position;
             float startSize = questionCamera.orthographicSize;
             Quaternion startRotation = questionCamera.transform.rotation;
-            Vector3 gateCenter = choseYes ? yesWorldCenter : noWorldCenter;
-            Vector3 targetPosition = new Vector3(gateCenter.x, gateCenter.y, startPosition.z);
-            Quaternion targetRotation = startRotation * Quaternion.Euler(0f, 0f, choseYes ? -0.8f : 0.8f);
+            Vector3 targetPosition = new Vector3(yesWorldCenter.x, yesWorldCenter.y, startPosition.z);
             float safeDuration = Mathf.Max(0.2f, duration);
             float elapsed = 0f;
 
@@ -1518,21 +1552,15 @@ namespace AngerBattle
 
                 float diveProgress = Mathf.InverseLerp(anticipationEnd, 1f, normalized);
                 float accelerated = Mathf.Pow(diveProgress, 2.15f);
-                float shakeEnvelope = diveProgress * diveProgress * (1f - diveProgress);
-                float shakeX = (Mathf.PerlinNoise(elapsed * 19f, 0.17f) - 0.5f) * 0.09f * shakeEnvelope;
-                float shakeY = (Mathf.PerlinNoise(0.63f, elapsed * 21f) - 0.5f) * 0.07f * shakeEnvelope;
                 Vector3 cameraPosition = Vector3.LerpUnclamped(startPosition, targetPosition, accelerated);
-                cameraPosition += new Vector3(shakeX, shakeY, 0f);
                 questionCamera.transform.position = cameraPosition;
-                questionCamera.transform.rotation = Quaternion.Slerp(startRotation, targetRotation, accelerated);
                 questionCamera.orthographicSize = Mathf.Lerp(startSize * 1.025f, diveOrthographicSize, accelerated);
-                SetAnswerEmphasis(answer, Mathf.Lerp(0.7f, 1f, accelerated));
                 onProgress?.Invoke(accelerated);
                 yield return null;
             }
 
             questionCamera.transform.position = targetPosition;
-            questionCamera.transform.rotation = targetRotation;
+            questionCamera.transform.rotation = startRotation;
             questionCamera.orthographicSize = diveOrthographicSize;
             onProgress?.Invoke(1f);
         }
@@ -1669,11 +1697,19 @@ namespace AngerBattle
 
         private void SetGateObjectsActive(bool active)
         {
+            // 地上の入口は単一の「穴」に統合済み。yesGateRenderer をその見た目として使い、
+            // noGateRenderer は将来の転用に備えて残すが常に非表示にする。
             if (yesGateRenderer != null) yesGateRenderer.gameObject.SetActive(active);
-            if (noGateRenderer != null) noGateRenderer.gameObject.SetActive(active);
+            if (noGateRenderer != null) noGateRenderer.gameObject.SetActive(false);
             if (yesLabel != null) yesLabel.gameObject.SetActive(false);
             if (noLabel != null) noLabel.gameObject.SetActive(false);
         }
+
+        /// <summary>地上の単一の穴（見た目はYesGate画像を流用）のワールド座標を返す。</summary>
+        public Vector3 GetHoleWorldCenter() => yesWorldCenter;
+
+        /// <summary>質問中に使うカメラ（未設定時はConfigureで解決済みのMain Camera）。</summary>
+        public Camera QuestionCamera => questionCamera;
 
         private void SetQuestionFloorActive(bool active)
         {

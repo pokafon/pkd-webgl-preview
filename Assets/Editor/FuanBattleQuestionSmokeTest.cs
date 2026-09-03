@@ -67,61 +67,55 @@ namespace AngerBattle.EditorTools
                     throw new Exception("不安またはコンタックの実画像がSpriteとして読み込めません。");
                 }
                 experience.PrepareChaseOpening(anxietySprite, contackSprite, controller.openingLayout);
+                experience.ConfigureFallStage(
+                    controller.player,
+                    controller.fallStageCamera != null ? controller.fallStageCamera : controller.questionCamera,
+                    controller.attackLineText.font,
+                    controller.fallStageDescendSpeed,
+                    controller.fallStageMoveSpeed,
+                    controller.fallStageSlowDuration,
+                    controller.fallStageSlowCooldown,
+                    controller.fallStageSlowFactor,
+                    controller.fallStageDistance,
+                    controller.fallStageCorridorHalfWidth);
 
                 Transform generatedRoot = canvas.transform.Find("AnxietyQuestionExperience");
                 if (generatedRoot == null)
                 {
                     throw new Exception("質問UIのルートが生成されませんでした。");
                 }
+                // 地上のクリック選択（YES／NOボタン・水面クリック領域）は廃止し、
+                // WASD移動＋落下ステージのYES／NO分岐へ置き換えたため、UI上のButtonはもう生成しない。
                 Button[] answerButtons = generatedRoot.GetComponentsInChildren<Button>(true);
-                if (answerButtons.Length != 4)
+                if (answerButtons.Length != 0)
                 {
-                    throw new Exception("YES / NOの選択プレートと水面ボタンが計4個生成されていません。");
+                    throw new Exception("地上のクリック選択ボタンが廃止されず残っています。");
                 }
 
-                Button[] plateButtons =
+                FallStageController fallStage = experienceObject.GetComponent<FallStageController>();
+                if (fallStage == null || !fallStage.IsReady)
                 {
-                    RequireButton(generatedRoot, "QuestionContent/QuestionStage/YESButton"),
-                    RequireButton(generatedRoot, "QuestionContent/QuestionStage/NOButton")
-                };
-                foreach (Button button in plateButtons)
-                {
-                    Image answerImage = button.targetGraphic as Image;
-                    if (answerImage == null || answerImage.color.a < 0.4f)
-                    {
-                        throw new Exception("YES / NOの選択プレートが表示状態になっていません。");
-                    }
-                    if (button.GetComponent<Outline>() == null)
-                    {
-                        throw new Exception("YES / NOの選択プレートに細い輪郭がありません。");
-                    }
-                    if (button.GetComponent<RectTransform>().anchorMax.y > 0.45f)
-                    {
-                        throw new Exception("YES / NOの選択プレートが水面の下へ配置されていません。");
-                    }
-                    if (HasComponentNamed(button.gameObject, "EllipseRaycastFilter"))
-                    {
-                        throw new Exception("選択プレートが楕円クリック判定のままです。");
-                    }
+                    throw new Exception("落下ステージ(FallStageController)が構成されていません。");
                 }
 
-                Button[] puddleButtons =
+                Component worldVisualsForHole = null;
+                foreach (Component component in experienceObject.GetComponents<Component>())
                 {
-                    RequireButton(generatedRoot, "QuestionContent/QuestionStage/YESPuddleButton"),
-                    RequireButton(generatedRoot, "QuestionContent/QuestionStage/NOPuddleButton")
-                };
-                foreach (Button button in puddleButtons)
-                {
-                    Image hitArea = button.targetGraphic as Image;
-                    if (hitArea == null || hitArea.color.a > 0.01f)
+                    if (component != null && component.GetType().Name == "AnxietyQuestionWorldVisuals")
                     {
-                        throw new Exception("水面クリック領域が透明になっていません。");
-                    }
-                    if (!HasComponentNamed(button.gameObject, "EllipseRaycastFilter"))
-                    {
-                        throw new Exception("水面クリック領域が楕円に限定されていません。");
+                        worldVisualsForHole = component;
+                        break;
                     }
                 }
+                PropertyInfo questionCameraProperty = worldVisualsForHole != null
+                    ? worldVisualsForHole.GetType().GetProperty("QuestionCamera", BindingFlags.Instance | BindingFlags.Public)
+                    : null;
+                object resolvedQuestionCamera = questionCameraProperty?.GetValue(worldVisualsForHole);
+                if (worldVisualsForHole == null || resolvedQuestionCamera == null)
+                {
+                    throw new Exception("地上の穴の位置計算に必要なワールド演出／カメラ参照が構成されていません。");
+                }
+
                 Image questionBackground = generatedRoot.GetComponent<Image>();
                 if (questionBackground == null || questionBackground.color.a < 0.12f)
                 {
@@ -147,30 +141,14 @@ namespace AngerBattle.EditorTools
                 {
                     throw new Exception("不要な回答履歴または不安の思考文が表示対象に残っています。");
                 }
+                // 足跡UI（FootstepProgress）は地上のクリック選択と一緒に廃止し、ワールドアート版では生成しない。
+                // 足跡の経路計算ロジック自体は将来の転用に備えて残しているため、データ構造だけ検証する。
                 Transform footsteps = generatedRoot.Find("QuestionContent/QuestionStage/FootstepProgress");
-                Image[] footstepImages = footsteps != null ? footsteps.GetComponentsInChildren<Image>(true) : Array.Empty<Image>();
-                if (footsteps == null || footstepImages.Length != 42)
+                if (footsteps != null)
                 {
-                    throw new Exception("初期の両足と、回答方向へ歩く連続経路用の足跡が生成されていません。");
-                }
-                int visibleFootsteps = 0;
-                foreach (Image footstep in footstepImages)
-                {
-                    if (footstep.gameObject.activeSelf)
-                    {
-                        visibleFootsteps++;
-                    }
-                }
-                if (visibleFootsteps != 2)
-                {
-                    throw new Exception("未回答の足跡が先に表示されています。");
-                }
-                if (footsteps.GetSiblingIndex() != 0)
-                {
-                    throw new Exception("足跡経路が質問や選択プレートより手前に重なっています。");
+                    throw new Exception("廃止したはずの足跡UIが残っています。");
                 }
                 ValidateFootstepRoute(experience);
-                ValidateQuestionScopedFootsteps(experience);
                 if (canvas.GetComponent<GraphicRaycaster>() == null)
                 {
                     throw new Exception("マウス入力に必要なGraphicRaycasterが生成されていません。");
@@ -425,47 +403,6 @@ namespace AngerBattle.EditorTools
             }
         }
 
-        private static void ValidateQuestionScopedFootsteps(AnxietyQuestionExperience experience)
-        {
-            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
-            FieldInfo currentQuestionField = typeof(AnxietyQuestionExperience).GetField("currentQuestionIndex", flags);
-            FieldInfo visibleCountField = typeof(AnxietyQuestionExperience).GetField("visibleFootstepCount", flags);
-            FieldInfo centersField = typeof(AnxietyQuestionExperience).GetField("footstepPathCenters", flags);
-            FieldInfo segmentsField = typeof(AnxietyQuestionExperience).GetField("footstepPathSegments", flags);
-            FieldInfo imagesField = typeof(AnxietyQuestionExperience).GetField("footstepImages", flags);
-            MethodInfo animate = typeof(AnxietyQuestionExperience).GetMethod("AnimateFootsteps", flags);
-            if (currentQuestionField == null || visibleCountField == null || centersField == null
-                || segmentsField == null || imagesField == null || animate == null)
-            {
-                throw new Exception("問題別の足跡表示状態を検証できません。");
-            }
-
-            var centers = centersField.GetValue(experience) as List<Vector2>;
-            var segments = segmentsField.GetValue(experience) as List<int>;
-            var images = imagesField.GetValue(experience) as Image[];
-            visibleCountField.SetValue(experience, centers != null ? centers.Count : 0);
-            currentQuestionField.SetValue(experience, 1);
-            animate.Invoke(experience, null);
-
-            int activeCount = 0;
-            for (int i = 0; images != null && i < images.Length; i++)
-            {
-                if (images[i] == null || !images[i].gameObject.activeSelf)
-                {
-                    continue;
-                }
-                activeCount++;
-                if (segments == null || i >= segments.Count || segments[i] != 1)
-                {
-                    throw new Exception("2問目に進んだ時、別の問題の足跡が残っています。");
-                }
-            }
-            if (activeCount != 4)
-            {
-                throw new Exception("現在の問題に対応する足跡だけが表示されていません。");
-            }
-        }
-
         private static void ValidateFaceOffFloor(
             GameObject experienceObject,
             SpriteRenderer yesGateRenderer,
@@ -493,29 +430,6 @@ namespace AngerBattle.EditorTools
             {
                 throw new Exception("締めでYES／NOの穴が床に残っています。");
             }
-        }
-
-        private static Button RequireButton(Transform root, string path)
-        {
-            Transform target = root.Find(path);
-            Button button = target != null ? target.GetComponent<Button>() : null;
-            if (button == null)
-            {
-                throw new Exception(path + " が生成されていません。");
-            }
-            return button;
-        }
-
-        private static bool HasComponentNamed(GameObject target, string typeName)
-        {
-            foreach (MonoBehaviour component in target.GetComponents<MonoBehaviour>())
-            {
-                if (component != null && component.GetType().Name == typeName)
-                {
-                    return true;
-                }
-            }
-            return false;
         }
 
         private static void ValidateController(FuanBattleController controller)
@@ -590,6 +504,16 @@ namespace AngerBattle.EditorTools
             if (controller.questionRainMaterial == null || controller.questionRunningWetRoadClip == null)
             {
                 throw new Exception("雨マテリアルまたはアスファルト上の走行音が未設定です。");
+            }
+            if (controller.fallStageDistance <= 0f || controller.fallStageCorridorHalfWidth <= 0f
+                || controller.fallStageDescendSpeed <= 0f || controller.fallStageMoveSpeed <= 0f)
+            {
+                throw new Exception("落下ステージの距離・幅・速度がInspectorで正値になっていません。");
+            }
+            if (controller.fallStageSlowDuration <= 0f || controller.fallStageSlowCooldown < 0f
+                || controller.fallStageSlowFactor <= 0f || controller.fallStageSlowFactor >= 1f)
+            {
+                throw new Exception("落下ステージの仮スロー継続秒数・クールタイム・倍率が想定範囲外です。");
             }
         }
     }
