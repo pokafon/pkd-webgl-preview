@@ -125,6 +125,12 @@ PCも開く機会がなくなり、捨ててしまった。
 <<if all_emotions_isolated()>>
     <<jump TrueEnd_Start>>
 <<endif>>
+
+<<blackout "on">>
+
+THE END
+
+<<return_to_title>>
 ===
 
 title: TrueEnd_Start

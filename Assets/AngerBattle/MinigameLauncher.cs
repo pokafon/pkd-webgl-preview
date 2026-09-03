@@ -333,6 +333,47 @@ namespace AngerBattle
             yield return instance.wakeGlitchIntro.Play();
         }
 
+        /// <summary>
+        /// 通常END（全感情を隔離しなかった場合のEndingノード末尾）から呼ばれる。
+        /// 一連の物語状態をリセットし、タイトル画面へ戻す。
+        /// </summary>
+        [YarnCommand("return_to_title")]
+        public static IEnumerator ReturnToTitleCommand()
+        {
+            if (instance == null) yield break;
+            yield return instance.ReturnToTitleRoutine();
+        }
+
+        private IEnumerator ReturnToTitleRoutine()
+        {
+            AbortActiveBattle();
+            EmotionRouteState.Reset();
+
+            DialogueRunner runner = FindFirstObjectByType<DialogueRunner>();
+            if (runner != null)
+            {
+                runner.VariableStorage.SetValue("$consultedAnger", false);
+                runner.VariableStorage.SetValue("$consultedAnxiety", false);
+                runner.VariableStorage.SetValue("$consultedSadness", false);
+            }
+
+            if (battleRoot != null) battleRoot.SetActive(false);
+            if (fuanBattleRoot != null) fuanBattleRoot.SetActive(false);
+            if (bedFlightRoot != null) bedFlightRoot.SetActive(false);
+            if (memoryRecallRoot != null) memoryRecallRoot.SetActive(false);
+            if (sadnessBattleRoot != null) sadnessBattleRoot.SetActive(false);
+            if (sadnessMapEnvironment != null) sadnessMapEnvironment.HideMaps();
+
+            DialogueVisuals.SetPortrait("None");
+            DialogueVisuals.SetBackground("None");
+            DialogueVisuals.SetBgm("None");
+
+            SetDialogueVisible(false);
+
+            TitleScreenController.ShowTitle();
+            yield break;
+        }
+
         private Task RunAngerBattle()
         {
             return RunBattle(battleRoot, angerBattleController.StartBattle, PlayClockGlitchIntroIfPresent, PlayWakeThenGoodMorningOutro, PlayAngerLevelUpBeat);

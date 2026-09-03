@@ -9,6 +9,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Yarn.Unity;
 
 namespace PKD.EditorTools
 {
@@ -117,7 +118,7 @@ namespace PKD.EditorTools
             {
                 SceneHierarchyUtility.MoveUnderGroup(scene, SceneHierarchyUtility.Find(scene, name), core.name);
             }
-            foreach (string name in new[] { "DialogueVisualsCanvas", "ClockGlitchIntro", "WakeGlitchIntro", "GoodMorningOutro" })
+            foreach (string name in new[] { "DialogueVisualsCanvas", "ClockGlitchIntro", "WakeGlitchIntro", "GoodMorningOutro", "TitleScreen" })
             {
                 SceneHierarchyUtility.MoveUnderGroup(scene, SceneHierarchyUtility.Find(scene, name), presentation.name);
             }
@@ -271,6 +272,11 @@ namespace PKD.EditorTools
                     if (text.font != null) continue;
                     text.font = japaneseFont;
                     EditorUtility.SetDirty(text);
+                    // textがプレハブインスタンス（例: Dialogue Systemの「Line Presenter」）の
+                    // 子である場合、フィールド代入+SetDirtyだけではインスタンスの
+                    // override として記録されず、保存後に元のnullへ戻ってしまうことがある。
+                    // 明示的に記録して確実に永続化する。
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(text);
                 }
             }
         }
@@ -346,10 +352,35 @@ namespace PKD.EditorTools
             if (TMP_Settings.defaultFontAsset != japaneseFont)
                 throw new InvalidOperationException("TMPの既定フォントがNotoSansJP SDFではありません。");
 
+            ValidateTitleScreen(scene);
+
             EditorSceneManager.MarkSceneDirty(scene);
             if (!EditorSceneManager.SaveScene(scene))
             {
                 throw new InvalidOperationException("検証後のSampleScene保存に失敗しました。");
+            }
+        }
+
+        /// <summary>
+        /// タイトル画面（起動時のメインメニュー）が正式に構成されていることを確認する。
+        /// ・_Presentation直下にTitleScreenが存在し、TitleScreenControllerの必須参照が揃っている
+        /// ・Dialogue SystemのDialogueRunner.autoStartがfalseになっている
+        ///   （タイトルの「はじめる」ボタンから明示的にStartDialogueするため、
+        ///   自動開始が有効なままだとタイトル画面より先にPrologueが始まってしまう）
+        /// </summary>
+        private static void ValidateTitleScreen(Scene scene)
+        {
+            GameObject titleScreen = RequireSceneObject(scene, "TitleScreen");
+            TitleScreenController controller = RequireComponent<TitleScreenController>(titleScreen);
+            if (controller.titleCanvasGroup == null || controller.startButton == null || controller.quitButton == null)
+            {
+                throw new InvalidOperationException("TitleScreenControllerの必須参照が不足しています。");
+            }
+
+            DialogueRunner runner = RequireComponent<DialogueRunner>(RequireSceneObject(scene, "Dialogue System"));
+            if (runner.autoStart)
+            {
+                throw new InvalidOperationException("DialogueRunner.autoStartがtrueのままです。タイトル画面より先にPrologueが自動開始してしまいます。");
             }
         }
 

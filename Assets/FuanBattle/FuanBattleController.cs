@@ -345,6 +345,9 @@ namespace AngerBattle
                 {
                     yield return null;
                 }
+
+                // 消去する演出：白フラッシュ+破片飛散+フェードアウト（新規イラストは使わない）
+                yield return StartCoroutine(EmotionResolutionFlow.PlayElimination(enemy.transform));
             }
 
             enemy.OnDefeated -= HandleEnemyDefeated;

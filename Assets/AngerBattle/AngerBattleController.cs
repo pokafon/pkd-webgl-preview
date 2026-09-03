@@ -318,6 +318,7 @@ namespace AngerBattle
                     }
                 }
 
+                EmotionOutcome resolution = EmotionOutcome.Unresolved;
                 yield return StartCoroutine(EmotionResolutionFlow.Choose(
                     this,
                     EmotionKind.Anger,
@@ -325,10 +326,16 @@ namespace AngerBattle
                     attackLineText,
                     characterNameText,
                     lineBackground,
-                    null));
+                    value => resolution = value));
 
                 // 怒り戦では最後の一撃までを戦闘として遊ぶ。隔離時はその場の怒りを
-                // 牢へ閉じ込め、消去時は従来どおり撃破済み状態のまま終了する。
+                // 牢へ閉じ込め、消去時は消滅演出（白フラッシュ+破片飛散+フェード）を
+                // 再生してから終了する。
+                if (resolution == EmotionOutcome.Eliminated)
+                {
+                    yield return StartCoroutine(EmotionResolutionFlow.PlayElimination(enemy.transform));
+                }
+
                 CompleteBattle();
                 yield break;
             }

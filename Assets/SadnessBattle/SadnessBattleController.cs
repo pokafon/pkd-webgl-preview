@@ -198,7 +198,9 @@ namespace SadnessBattle
 
             if (resolution == EmotionOutcome.Eliminated && sadnessActor != null)
             {
-                sadnessActor.SetActive(false);
+                // 消去する演出：白フラッシュ+破片飛散+フェードアウト（新規イラストは使わない）。
+                // このコルーチンの最後で非アクティブ化まで行う。
+                yield return StartCoroutine(EmotionResolutionFlow.PlayElimination(sadnessActor.transform));
             }
 
             yield return ShowLineAndWaitForSpace(finalLine);

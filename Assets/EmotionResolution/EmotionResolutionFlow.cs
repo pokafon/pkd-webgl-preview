@@ -54,8 +54,10 @@ namespace PKD.Emotions
     }
 
     /// <summary>
-    /// 感情戦共通の「隔離する／消去する」選択と、仮牢屋の落下演出。
-    /// 専用アートへ差し替えるまで、実行時生成した鉄格子で演出する。
+    /// 感情戦共通の「隔離する／消去する」選択と、それぞれの視覚演出。
+    /// 隔離＝仮牢屋の落下演出（専用アートへ差し替えるまで、実行時生成した鉄格子で演出する）。
+    /// 消去＝<see cref="PlayElimination"/>による白フラッシュ+破片飛散+フェードアウト
+    /// （既存のSpriteRendererをそのまま使い、新規イラストは追加しない）。
     /// </summary>
     public static class EmotionResolutionFlow
     {
@@ -202,6 +204,96 @@ namespace PKD.Emotions
             texture.Apply();
             whiteSprite = Sprite.Create(texture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
             whiteSprite.name = "RuntimeCageSprite";
+        }
+
+        /// <summary>
+        /// 「消去する」を選んだ際の消滅演出。新規イラストは使わず、対象に既に付いている
+        /// SpriteRendererへ白フラッシュ→破片の飛散→フェードアウトを適用してから非表示にする。
+        /// </summary>
+        public static IEnumerator PlayElimination(Transform target)
+        {
+            if (target == null) yield break;
+
+            SpriteRenderer targetRenderer = target.GetComponentInChildren<SpriteRenderer>();
+            if (targetRenderer == null)
+            {
+                target.gameObject.SetActive(false);
+                yield break;
+            }
+
+            EnsureWhiteSprite();
+            Color originalColor = targetRenderer.color;
+
+            float flashDuration = 0.1f;
+            float elapsed = 0f;
+            while (elapsed < flashDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                targetRenderer.color = Color.Lerp(originalColor, Color.white, elapsed / flashDuration);
+                yield return null;
+            }
+            targetRenderer.color = Color.white;
+
+            Transform[] shards = BuildEraseShards(targetRenderer.bounds.center, targetRenderer.sortingOrder + 5, targetRenderer.bounds.size);
+
+            float fadeDuration = 0.45f;
+            elapsed = 0f;
+            while (elapsed < fadeDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = elapsed / fadeDuration;
+                float alpha = Mathf.Lerp(1f, 0f, t);
+                targetRenderer.color = new Color(1f, 1f, 1f, alpha);
+                for (int index = 0; index < shards.Length; index++)
+                {
+                    if (shards[index] == null) continue;
+                    shards[index].position += shards[index].up * (Time.unscaledDeltaTime * 2.4f);
+                    SpriteRenderer shardRenderer = shards[index].GetComponent<SpriteRenderer>();
+                    if (shardRenderer != null)
+                    {
+                        Color shardColor = shardRenderer.color;
+                        shardColor.a = Mathf.Lerp(1f, 0f, t);
+                        shardRenderer.color = shardColor;
+                    }
+                }
+                yield return null;
+            }
+
+            target.gameObject.SetActive(false);
+            targetRenderer.color = originalColor;
+
+            for (int index = 0; index < shards.Length; index++)
+            {
+                if (shards[index] != null) UnityEngine.Object.Destroy(shards[index].gameObject);
+            }
+        }
+
+        private static Transform[] BuildEraseShards(Vector3 center, int sortingOrder, Vector3 boundsSize)
+        {
+            EnsureWhiteSprite();
+            const int shardCount = 10;
+            Transform[] shards = new Transform[shardCount];
+            float radius = Mathf.Max(0.2f, Mathf.Max(boundsSize.x, boundsSize.y) * 0.35f);
+
+            for (int index = 0; index < shardCount; index++)
+            {
+                float angle = (index * (360f / shardCount) + UnityEngine.Random.Range(-12f, 12f)) * Mathf.Deg2Rad;
+                Vector3 direction = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f);
+                Vector3 offset = direction * (radius * UnityEngine.Random.Range(0.3f, 1f));
+
+                GameObject shard = new GameObject("EraseShard", typeof(SpriteRenderer));
+                shard.transform.position = center + offset;
+                shard.transform.up = direction.sqrMagnitude > 0.0001f ? direction : Vector3.up;
+                float size = UnityEngine.Random.Range(0.08f, 0.18f);
+                shard.transform.localScale = new Vector3(size, size, 1f);
+
+                SpriteRenderer renderer = shard.GetComponent<SpriteRenderer>();
+                renderer.sprite = whiteSprite;
+                renderer.color = Color.white;
+                renderer.sortingOrder = sortingOrder;
+                shards[index] = shard.transform;
+            }
+            return shards;
         }
 
         private static void PlayLockSound(GameObject cage)
