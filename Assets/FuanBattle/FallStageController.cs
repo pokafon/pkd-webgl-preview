@@ -108,7 +108,8 @@ namespace AngerBattle
                 playerOriginalColor = playerRenderer.color;
             }
 
-            float playerWorldY = anchor.y + fallDistance * 0.5f;
+            // プレイヤーは常にカメラ内、画面上端から1/3程度の高さに固定する（落下距離の長さに左右されない）。
+            float playerWorldY = anchor.y + fallCamera.orthographicSize / 3f;
             float traveled = 0f;
             float playerX = 0f;
             float slowTimer = 0f;
@@ -261,7 +262,9 @@ namespace AngerBattle
             fallCamera.transform.position = new Vector3(anchor.x, anchor.y, capturedCameraPosition.z);
             fallCamera.transform.rotation = Quaternion.identity;
             float requiredHalfWidth = corridorHalfWidth + 0.6f;
-            fallCamera.orthographicSize = Mathf.Max(3.6f, requiredHalfWidth / Mathf.Max(0.4f, fallCamera.aspect));
+            // コンタックの立ち絵は縦6ユニット前後あるため、1/3位置に置いても頭が切れないよう
+            // 最低でも画面の縦半分を5.8ユニット確保する（3.6だと頭が画面外に出ていた）。
+            fallCamera.orthographicSize = Mathf.Max(5.8f, requiredHalfWidth / Mathf.Max(0.4f, fallCamera.aspect));
 
             if (backgroundRenderer != null)
             {

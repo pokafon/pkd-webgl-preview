@@ -166,8 +166,8 @@ namespace AngerBattle
         public float fallStageDescendSpeed = 3.2f;
         [Tooltip("左右移動の速度")]
         public float fallStageMoveSpeed = 6f;
-        [Tooltip("落下の総距離。短めでよい")]
-        public float fallStageDistance = 11f;
+        [Tooltip("落下の総距離。自動落下速度との比で所要時間が決まる（既定値で通常時約12.5秒）")]
+        public float fallStageDistance = 40f;
         [Tooltip("落下通路の片側の幅")]
         public float fallStageCorridorHalfWidth = 2.2f;
         [Tooltip("Spaceキーで発動する仮スローの継続秒数")]

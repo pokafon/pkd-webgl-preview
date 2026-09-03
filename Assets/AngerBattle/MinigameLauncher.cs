@@ -83,6 +83,12 @@ namespace AngerBattle
         [Tooltip("戦闘中は隠したい背景・立ち絵（DialogueVisuals）のルート（任意、未設定でも可）")]
         public GameObject dialogueVisualsRoot;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        [Header("WebGL確認用クイック起動ボタン（開発ビルド専用。製品ビルドには一切含まれない）")]
+        [Tooltip("画面右上に「FuanBattle」ボタンを常時表示し、押すと物語を進めず不安戦を直接開始する。F1デバッグメニューが使えないWebGLビルドでの確認用。UNITY_EDITORまたはDEVELOPMENT_BUILDでのみコンパイルされる")]
+        public bool showWebGLQuickDebugButton = true;
+#endif
+
         private CanvasGroup dialogueCanvasGroup;
         private TaskCompletionSource<bool> battleFinishedSource;
         private Task activeBattleTask;
@@ -129,6 +135,58 @@ namespace AngerBattle
             }
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private bool quickDebugStarting;
+#endif
+
+        /// <summary>
+        /// エディタのF1デバッグメニューとは別に、常時（WebGLビルドでも）動く軽量な確認用UI。
+        /// 画面右上の小さな「FuanBattle」ボタンを押すと、物語進行を変えずに不安戦だけを直接起動する。
+        /// UNITY_EDITORまたはDEVELOPMENT_BUILDでのみコンパイルされ、製品ビルドには含まれない。
+        /// </summary>
+        private void OnGUI()
+        {
+#if UNITY_EDITOR
+            OnGUIEditorDebugMenu();
+#endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!showWebGLQuickDebugButton)
+            {
+                return;
+            }
+
+            const float buttonWidth = 108f;
+            const float buttonHeight = 26f;
+            var rect = new Rect(Screen.width - buttonWidth - 12f, 12f, buttonWidth, buttonHeight);
+
+            GUI.enabled = !quickDebugStarting && !battleInProgress;
+            if (GUI.Button(rect, quickDebugStarting ? "起動中…" : "FuanBattle"))
+            {
+                quickDebugStarting = true;
+                _ = StartQuickFuanBattle();
+            }
+            GUI.enabled = true;
+#endif
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private async Task StartQuickFuanBattle()
+        {
+            try
+            {
+                // タイトル画面が出ている間は、通常の「はじめる」と同様にタイトルUIを隠してから
+                // ミニゲームへ直行する（隠さないと、下で戦闘が始まってもタイトルの全画面UIが
+                // 覆ったままで見えなくなる）。
+                TitleScreenController.HideImmediately();
+                await StartMinigame("FuanBattle");
+            }
+            finally
+            {
+                quickDebugStarting = false;
+            }
+        }
+#endif
+
 #if UNITY_EDITOR
         [Header("開発用（エディタ専用・シーンセレクト）")]
         [Tooltip("このキーで、デバッグ用のシーンセレクトメニューの表示/非表示を切り替える（ビルドには含まれない）")]
@@ -159,7 +217,7 @@ namespace AngerBattle
             }
         }
 
-        private void OnGUI()
+        private void OnGUIEditorDebugMenu()
         {
             if (!debugMenuVisible) return;
 

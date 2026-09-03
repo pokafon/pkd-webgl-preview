@@ -54,6 +54,27 @@ public class TitleScreenController : MonoBehaviour
         }
     }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    /// <summary>
+    /// タイトル画面だけを即座に隠す（Prologueは開始しない）。
+    /// WebGL確認用クイックデバッグボタン（MinigameLauncher）など、
+    /// 物語を進めずミニゲームへ直行する入口から使う。
+    /// 呼び出し元が開発ビルド専用のため、このメソッドも同じ条件でのみコンパイルする。
+    /// </summary>
+    public static void HideImmediately()
+    {
+        if (instance == null) return;
+
+        if (instance.titleCanvasGroup != null)
+        {
+            instance.titleCanvasGroup.alpha = 0f;
+            instance.titleCanvasGroup.interactable = false;
+            instance.titleCanvasGroup.blocksRaycasts = false;
+        }
+        instance.gameObject.SetActive(false);
+    }
+#endif
+
     private void HandleStart()
     {
         if (titleCanvasGroup != null)
