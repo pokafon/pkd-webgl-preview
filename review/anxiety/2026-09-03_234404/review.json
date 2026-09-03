@@ -1,0 +1,87 @@
+{
+  "source_video": "PKD_Anxiety_2026-09-03_234404.mp4",
+  "source_video_release_url": "https://github.com/pokafon/pkd-webgl-preview/releases/download/playtest-captures/PKD_Anxiety_2026-09-03_234404.mp4",
+  "duration_seconds": 65.0,
+  "fps": 30,
+  "resolution": "1920x1080",
+  "recorded_with": "ffmpeg desktop capture (gdigrab), Unity Editor Play Mode",
+  "notes": "動画はffmpegによる外部デスクトップ録画。Unity Editorのウィンドウ枠・ツールバーも録画範囲に含まれているため、実際のゲーム画面は各フレームの中央〜下寄りの領域。",
+  "key_timestamps_seconds": {
+    "opening_line_dismissed": 16.5,
+    "hole_entry": 17.9,
+    "fall_start": 20.2,
+    "space_slow_used": 21.1,
+    "yes_no_appear": 30.5,
+    "answer_committed_no": 31.8,
+    "ground_return": 34.0
+  },
+  "answer_result": "NO",
+  "answer_judged_correct": false,
+  "segments": [
+    {
+      "id": "01_ground_approach",
+      "file": "01_ground_approach.jpg",
+      "start": 16.0,
+      "end": 18.0,
+      "description": "地上でWASD移動し、穴へ近づく（冒頭セリフが消えて操作可能になった直後）"
+    },
+    {
+      "id": "02_hole_entry",
+      "file": "02_hole_entry.jpg",
+      "start": 17.3,
+      "end": 18.3,
+      "description": "穴へ侵入する瞬間。コンタックが穴の位置で消失する"
+    },
+    {
+      "id": "03_hole_transition",
+      "file": "03_hole_transition.jpg",
+      "start": 18.0,
+      "end": 20.0,
+      "description": "穴侵入後の暗転・落下空間への遷移演出"
+    },
+    {
+      "id": "04_fall_start",
+      "file": "04_fall_start.jpg",
+      "start": 19.6,
+      "end": 20.8,
+      "description": "落下ステージ開始。左右の通路と障害物が出現する"
+    },
+    {
+      "id": "05_slow_motion",
+      "file": "05_slow_motion.jpg",
+      "start": 20.6,
+      "end": 23.1,
+      "description": "Spaceスロー使用前後（発動はおおよそ21.1秒前後と推定）"
+    },
+    {
+      "id": "06_answer_appearance",
+      "file": "06_answer_appearance.jpg",
+      "start": 29.5,
+      "end": 31.0,
+      "description": "YES/NOラベルが画面下部に出現し、徐々に近づいてくる"
+    },
+    {
+      "id": "07_answer_commit",
+      "file": "07_answer_commit.jpg",
+      "start": 31.0,
+      "end": 33.0,
+      "description": "NO側へ入り回答が確定、画面が暗転する"
+    },
+    {
+      "id": "08_ground_return",
+      "file": "08_ground_return.jpg",
+      "start": 32.0,
+      "end": 35.0,
+      "description": "落下終了後、地上へ復帰。今回はNOが不正解と判定され、1問目の地上フェーズへ戻った"
+    }
+  ],
+  "overview_sheets": [
+    { "file": "overview_01.jpg", "start": 0.0, "end": 10.0 },
+    { "file": "overview_02.jpg", "start": 10.0, "end": 20.0 },
+    { "file": "overview_03.jpg", "start": 20.0, "end": 30.0 },
+    { "file": "overview_04.jpg", "start": 30.0, "end": 40.0 },
+    { "file": "overview_05.jpg", "start": 40.0, "end": 50.0 },
+    { "file": "overview_06.jpg", "start": 50.0, "end": 60.0 },
+    { "file": "overview_07.jpg", "start": 60.0, "end": 65.0 }
+  ]
+}
